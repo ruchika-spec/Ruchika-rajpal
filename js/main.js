@@ -325,6 +325,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Floating WA phone fill
   document.querySelectorAll('.wa-link').forEach(el => {
     el.href = `https://wa.me/${WHATSAPP_NUMBER}`;
+    el.target = '_blank';
+    el.rel = 'noopener noreferrer';
   });
   document.querySelectorAll('.call-link').forEach(el => {
     el.href = `tel:${PHONE_NUMBER.replace(/\s/g, '')}`;
