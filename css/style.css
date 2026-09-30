@@ -1376,9 +1376,11 @@ footer {
 }
 
 @media (max-width: 768px) {
+  /* Nav */
   .nav-links { display: none; }
   .nav-cta .btn { display: none; }
   .nav-toggle { display: flex; }
+  .nav-logo-text .brand-main { font-size: 20px; }
 
   .nav-links.open {
     display: flex;
@@ -1390,20 +1392,54 @@ footer {
     padding: 20px;
     gap: 20px;
     border-top: 1px solid rgba(255,255,255,0.1);
+    z-index: 999;
   }
 
-  .hero h1 { font-size: 36px; }
-  .search-box { flex-direction: column; }
-  .search-field { min-width: auto; }
-  .hero-stats { gap: 24px; }
+  /* Hero */
+  .hero { padding: 48px 0 40px; }
+  .hero-inner { grid-template-columns: 1fr; gap: 32px; }
+  .hero h1 { font-size: 30px; }
+  .hero-badge { font-size: 11px; }
+  .hero-form-card { padding: 24px 20px; }
+  .hero-form-grid { grid-template-columns: 1fr; gap: 12px; }
+  .hero-form-submit { padding: 14px; font-size: 14px; }
+
+  /* Trust bar */
+  .trust-bar-inner { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .trust-num { font-size: 28px; }
+
+  /* Destinations */
+  .dest-grid { grid-template-columns: repeat(2, 1fr); }
+  .dest-card { height: 110px; }
+
+  /* How it works */
+  .how-steps { grid-template-columns: 1fr 1fr; }
+
+  /* Sections */
+  .section-pad { padding: 48px 0; }
   .form-row { grid-template-columns: 1fr; }
+
+  /* Grids */
   .footer-grid { grid-template-columns: 1fr; gap: 28px; }
   .packages-grid { grid-template-columns: 1fr; }
   .blog-grid { grid-template-columns: 1fr; }
   .why-grid { grid-template-columns: 1fr 1fr; }
   .testimonials-grid { grid-template-columns: 1fr; }
-  .section-pad { padding: 56px 0; }
-  .footer-bottom { flex-direction: column; text-align: center; }
+
+  /* Enquiry */
+  .enquiry-grid { grid-template-columns: 1fr; }
+  .enquiry-form-card { padding: 24px 20px; }
+
+  /* CTA strip */
+  .cta-strip-inner { flex-direction: column; text-align: center; gap: 24px; }
+  .cta-strip-btns { justify-content: center; }
+
+  /* Footer */
+  .footer-bottom { flex-direction: column; text-align: center; gap: 8px; }
+
+  /* About */
+  .about-section-inner { grid-template-columns: 1fr; }
+  .about-image-wrap { min-height: 240px; }
 }
 
 @media (max-width: 480px) {
@@ -1411,7 +1447,15 @@ footer {
   .why-grid { grid-template-columns: 1fr; }
   .how-steps { grid-template-columns: 1fr; }
   .dest-grid { grid-template-columns: 1fr 1fr; }
-  .trust-bar-inner { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .cta-strip-inner { flex-direction: column; text-align: center; }
-  .cta-strip-btns { justify-content: center; }
+  .dest-card { height: 90px; }
+  .trust-bar-inner { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .trust-num { font-size: 24px; }
+  .hero h1 { font-size: 26px; }
+  .section-title { font-size: 24px; }
+  .hero-form-card { border-radius: 16px; }
+  .pkg-card { border-radius: 16px; }
+  .filter-bar { flex-direction: column; gap: 12px; }
+  .filter-field { width: 100%; }
+  .page-hero { padding: 40px 0 32px; }
+  .page-hero h1 { font-size: 28px; }
 }
