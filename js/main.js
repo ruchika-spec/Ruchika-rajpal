@@ -451,7 +451,8 @@ async function handleEnquirySubmit(e) {
     `Hi Holidays by Vismora! 🌍\n\nI'd like to enquire about a holiday package.\n\nName: ${name}\nPhone: ${phone}${dest !== 'General' ? '\nDestination: '+dest : ''}${travelDate ? '\nTravel Date: '+travelDate : ''}${travellers ? '\nTravellers: '+travellers : ''}${budget ? '\nBudget: '+budget : ''}${message ? '\n\nMessage: '+message : ''}\n\nPlease share more details!`
   );
 
-  // Show inline thank-you — replace form content
+  // Show inline thank-you, then restore the form after 5 seconds
+  const originalHTML = form.innerHTML;
   form.innerHTML = `
     <div class="enq-thankyou">
       <div class="enq-thankyou-icon">✅</div>
@@ -462,6 +463,11 @@ async function handleEnquirySubmit(e) {
       </a>
     </div>
   `;
+  setTimeout(() => {
+    form.innerHTML = originalHTML;
+    // Re-attach submit listener on the restored form
+    form.addEventListener('submit', handleEnquirySubmit);
+  }, 5000);
 }
 
 // ===== TOAST =====
