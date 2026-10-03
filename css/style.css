@@ -847,6 +847,10 @@ ul { list-style: none; }
   margin-top: auto;
 }
 
+.pkg-footer.pkg-footer-no-price {
+  justify-content: flex-end;
+}
+
 .pkg-price {
   display: flex;
   flex-direction: column;

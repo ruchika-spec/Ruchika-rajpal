@@ -273,13 +273,14 @@ function buildPackageCard(pkg) {
         <div class="pkg-country">📍 ${region}</div>
         ${ratingHTML}
         <ul class="pkg-highlights">${highlights}</ul>
-        <div class="pkg-footer">
+        <div class="pkg-footer${isAdminPkg && price > 0 ? '' : ' pkg-footer-no-price'}">
+          ${isAdminPkg && price > 0 ? `
           <div class="pkg-price">
             ${origPrice && disc > 0 ? `<span class="pkg-price-original">₹${origPrice.toLocaleString('en-IN')}</span>` : ''}
             <span class="from">Starting from</span>
             <span class="amount">${formatINR(price)}</span>
             <span class="per">per person${disc > 0 ? ` <span class="pkg-discount-badge">${disc}% off</span>` : ''}</span>
-          </div>
+          </div>` : ''}
           <div class="pkg-actions">
             <a href="https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-whatsapp" title="WhatsApp">💬</a>
             <a href="package.html?id=${pkgId}" class="btn btn-sm btn-primary">View Details</a>
