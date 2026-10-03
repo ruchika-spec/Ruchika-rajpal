@@ -324,6 +324,9 @@
           <span class="nb" id="enq-count-badge">0</span>
         </div>
         <div class="nl">Settings</div>
+        <div class="ni" data-section="destinations">
+          <span class="nic">🗺️</span> Destinations
+        </div>
         <div class="ni" data-section="settings">
           <span class="nic">⚙️</span> Settings
         </div>
@@ -401,6 +404,26 @@
           </div>
         </div>
 
+        <!-- ===== DESTINATIONS ===== -->
+        <div class="section-page" id="section-destinations">
+          <div class="tc">
+            <div class="tc-hd">
+              <div class="tc-title">All Destinations</div>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="text" id="new-dest-name" placeholder="Add a new destination…"
+                  style="padding:7px 13px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-size:13px;font-family:Inter,sans-serif;outline:none;width:240px">
+                <button class="btn btn-primary btn-sm" id="dest-add-btn">+ Add Destination</button>
+              </div>
+            </div>
+            <div style="padding:20px">
+              <div style="font-size:12px;color:var(--g500);margin-bottom:14px">
+                All destinations appear in the package form dropdown. Custom destinations you add are shown with a ✏️ and can be removed.
+              </div>
+              <div id="dest-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ===== SETTINGS ===== -->
         <div class="section-page" id="section-settings">
           <div class="tc">
@@ -469,11 +492,13 @@
             <div class="fg"><label>Destination *</label>
               <select id="pkg-dest">
                 <option value="">Select Destination</option>
-                <option>Bali</option><option>Maldives</option><option>Dubai</option>
-                <option>Singapore</option><option>Thailand</option><option>Vietnam</option>
-                <option>Mauritius</option><option>Malaysia</option><option>Hong Kong</option>
-                <option>Europe</option>
               </select>
+              <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
+                <input type="text" id="custom-dest-input" placeholder="Or type a new destination…"
+                  style="flex:1;padding:7px 11px;border:1.5px dashed var(--brand-light);border-radius:var(--rsm);font-size:12px;font-family:Inter,sans-serif;outline:none;color:var(--g900)">
+                <button type="button" id="add-custom-dest-btn" class="btn btn-outline btn-sm" style="white-space:nowrap">+ Add</button>
+              </div>
+              <div class="fhint">Can't find your destination? Type it above and click Add.</div>
             </div>
           </div>
           <div class="fr3 fr">
@@ -665,10 +690,30 @@ const SUPABASE_URL_DEFAULT = 'https://iqpilmnrdclgdosrhwso.supabase.co';
 let SUPABASE_KEY = localStorage.getItem('hbv_sb_key') || '';
 let SUPABASE_URL = localStorage.getItem('hbv_sb_url') || SUPABASE_URL_DEFAULT;
 
+// ===== PRESET DESTINATIONS =====
+const PRESET_DESTINATIONS = [
+  // Southeast Asia
+  'Bali','Thailand','Singapore','Vietnam','Malaysia','Philippines','Cambodia','Indonesia','Myanmar',
+  // Indian Ocean
+  'Maldives','Mauritius','Seychelles','Sri Lanka',
+  // Middle East
+  'Dubai','Abu Dhabi','Qatar','Jordan','Oman',
+  // Asia Pacific
+  'Hong Kong','Japan','South Korea','Australia','New Zealand',
+  // Europe
+  'Europe','France / Paris','Switzerland','Italy','Greece','Spain','United Kingdom','Turkey',
+  'Netherlands','Czech Republic / Prague','Austria / Vienna','Portugal','Scandinavia','Germany',
+  // Americas
+  'USA','Canada','Mexico','Belize',
+  // Africa
+  'South Africa','Kenya / Safari','Morocco','Egypt',
+];
+
 // ===== STATE =====
 let state = {
   packages: [],
   enquiries: [],
+  customDestinations: [],
   editingPkg: null,
   currentSection: 'dashboard',
 };
@@ -681,6 +726,7 @@ function init() {
   wirePackageModal();
   wireEnquiryModal();
   wireSettings();
+  wireDestinationPage();
   renderDashboard();
 }
 
@@ -689,18 +735,102 @@ function loadData() {
   try {
     state.packages = JSON.parse(localStorage.getItem('hbv_packages') || '[]');
     state.enquiries = JSON.parse(localStorage.getItem('hbv_enquiries') || '[]');
-    // Seed demo enquiries if empty
+    state.customDestinations = JSON.parse(localStorage.getItem('hbv_custom_dests') || '[]');
     if (state.enquiries.length === 0) seedDemoEnquiries();
   } catch(e) {
     state.packages = [];
     state.enquiries = [];
+    state.customDestinations = [];
   }
+  populateDestinationSelect();
 }
 
 function saveData() {
   localStorage.setItem('hbv_packages', JSON.stringify(state.packages));
   localStorage.setItem('hbv_enquiries', JSON.stringify(state.enquiries));
+  localStorage.setItem('hbv_custom_dests', JSON.stringify(state.customDestinations));
   updateBadges();
+}
+
+// ===== DESTINATIONS =====
+function allDestinations() {
+  return [...PRESET_DESTINATIONS, ...state.customDestinations.filter(d => !PRESET_DESTINATIONS.includes(d))];
+}
+
+function populateDestinationSelect() {
+  const sel = document.getElementById('pkg-dest');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select Destination</option>';
+  allDestinations().forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    if (d === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderDestinationsPage() {
+  const grid = document.getElementById('dest-grid');
+  if (!grid) return;
+  const all = allDestinations();
+  grid.innerHTML = all.map(d => {
+    const isCustom = state.customDestinations.includes(d);
+    const pkgCount = state.packages.filter(p => p.destination === d).length;
+    return `<div style="background:${isCustom?'#FEF3C7':'var(--brand-pale)'};border-radius:var(--rsm);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid ${isCustom?'#FDE68A':'var(--border)'}">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--g900)">${isCustom?'✏️ ':''}${esc(d)}</div>
+        <div style="font-size:11px;color:var(--g500);margin-top:1px">${pkgCount} package${pkgCount===1?'':'s'}</div>
+      </div>
+      ${isCustom ? `<button type="button" class="btn-xs btn" style="background:#FEE2E2;color:var(--danger);border:none" data-action="del-dest" data-dest="${esc(d)}">✕</button>` : ''}
+    </div>`;
+  }).join('');
+  // Wire delete buttons
+  grid.querySelectorAll('[data-action="del-dest"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm(`Remove "${btn.dataset.dest}" from destinations?`)) return;
+      state.customDestinations = state.customDestinations.filter(d => d !== btn.dataset.dest);
+      saveData();
+      populateDestinationSelect();
+      renderDestinationsPage();
+      toast('Destination removed.', 'success');
+    });
+  });
+}
+
+function wireDestinationPage() {
+  document.getElementById('dest-add-btn').addEventListener('click', addCustomDestination);
+  document.getElementById('new-dest-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addCustomDestination();
+  });
+  document.getElementById('add-custom-dest-btn').addEventListener('click', () => {
+    const input = document.getElementById('custom-dest-input');
+    const val = input.value.trim();
+    if (!val) return;
+    if (!state.customDestinations.includes(val) && !PRESET_DESTINATIONS.includes(val)) {
+      state.customDestinations.push(val);
+      saveData();
+      populateDestinationSelect();
+      toast(`"${val}" added as a destination.`, 'success');
+    }
+    document.getElementById('pkg-dest').value = val;
+    input.value = '';
+  });
+}
+
+function addCustomDestination() {
+  const input = document.getElementById('new-dest-name');
+  const val = input.value.trim();
+  if (!val) { toast('Enter a destination name.', 'error'); return; }
+  if (allDestinations().map(d=>d.toLowerCase()).includes(val.toLowerCase())) {
+    toast('This destination already exists.', 'error'); return;
+  }
+  state.customDestinations.push(val);
+  saveData();
+  populateDestinationSelect();
+  renderDestinationsPage();
+  input.value = '';
+  toast(`"${val}" added! It's now available in the package form.`, 'success');
 }
 
 function seedDemoEnquiries() {
@@ -776,7 +906,7 @@ function navigateTo(section) {
   document.getElementById(`section-${section}`).classList.add('active');
   state.currentSection = section;
 
-  const titles = { dashboard:'Dashboard', packages:'Packages', enquiries:'Enquiries', settings:'Settings' };
+  const titles = { dashboard:'Dashboard', packages:'Packages', enquiries:'Enquiries', destinations:'Destinations', settings:'Settings' };
   document.getElementById('tb-title').textContent = titles[section] || section;
 
   const acts = document.getElementById('tb-acts');
@@ -788,10 +918,25 @@ function navigateTo(section) {
     b.addEventListener('click', openAddPackageModal);
     acts.appendChild(b);
   }
+  if (section === 'destinations') {
+    const b = document.createElement('button');
+    b.className = 'btn btn-outline btn-sm';
+    b.textContent = '📤 Export Destinations';
+    b.addEventListener('click', () => {
+      const data = allDestinations().join('\n');
+      const blob = new Blob([data], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'destinations.txt';
+      a.click();
+    });
+    acts.appendChild(b);
+  }
 
   if (section === 'dashboard') renderDashboard();
   if (section === 'packages') renderPackagesTable();
   if (section === 'enquiries') renderEnquiriesTable();
+  if (section === 'destinations') renderDestinationsPage();
 }
 
 // ===== DASHBOARD =====
@@ -799,11 +944,12 @@ function renderDashboard() {
   const active = state.packages.filter(p => p.status === 'active').length;
   const newEnq = state.enquiries.filter(e => e.status === 'new').length;
   const booked = state.enquiries.filter(e => e.status === 'booked').length;
+  const webLeads = state.enquiries.filter(e => e.source === 'website' && e.status === 'new').length;
   const highlights = [
-    { label:'Total Packages', num: state.packages.length, ico:'🌍', bg:'#EDE8FF', trend:'+'+state.packages.length+' total' },
-    { label:'Active Packages', num: active, ico:'✅', bg:'#D1FAE5', trend:active+' live on site' },
-    { label:'New Enquiries', num: newEnq, ico:'📋', bg:'#DBEAFE', trend:'Need follow-up' },
-    { label:'Bookings Confirmed', num: booked, ico:'🎉', bg:'#FEF3C7', trend:'This month' },
+    { label:'Active Packages', num: active, ico:'✅', bg:'#D1FAE5', trend: active + ' live on website' },
+    { label:'New Enquiries', num: newEnq, ico:'📋', bg:'#DBEAFE', trend: newEnq ? '🔔 Need follow-up' : 'All caught up!' },
+    { label:'Website Leads', num: webLeads, ico:'🌐', bg:'#FEF3C7', trend: webLeads ? '🔥 From your site' : 'No new website leads' },
+    { label:'Bookings Confirmed', num: booked, ico:'🎉', bg:'#EDE8FF', trend:'Total confirmed' },
   ];
   document.getElementById('dash-stats').innerHTML = highlights.map(h => `
     <div class="sc">
@@ -896,13 +1042,16 @@ function renderEnqTableHTML(enqs) {
   if (!enqs.length) return `<div class="es"><div class="es-ico">📋</div><div class="es-title">No enquiries yet</div><div class="es-sub">Enquiries from your website will appear here.</div></div>`;
   return `<table>
     <thead><tr>
-      <th>Name</th><th>Destination</th><th>Travel Date</th><th>Phone</th><th>Status</th><th>Date</th><th>Actions</th>
+      <th>Name</th><th>Destination</th><th>Travel Date</th><th>Phone</th><th>Source</th><th>Status</th><th>Date</th><th>Actions</th>
     </tr></thead>
     <tbody>${enqs.map(e => `<tr>
       <td><strong>${esc(e.name)}</strong><br><small style="color:var(--g400)">${esc(e.email||'')}</small></td>
       <td>${esc(e.destination||'')}</td>
       <td>${esc(e.travelDate||'—')}</td>
       <td><a href="tel:${esc(e.phone||'')}" style="color:var(--brand-mid)">${esc(e.phone||'')}</a></td>
+      <td>${e.source==='website'
+        ? `<span class="badge" style="background:#DBEAFE;color:#1E40AF">🌐 Website</span>`
+        : `<span class="badge" style="background:var(--g100);color:var(--g500)">Manual</span>`}</td>
       <td>
         <select class="status-sel" data-id="${e.id}">
           <option value="new" ${e.status==='new'?'selected':''}>🔵 New</option>
@@ -937,15 +1086,15 @@ function openEnquiryModal(id) {
   if (!e) return;
   document.getElementById('enq-modal-body').innerHTML = `
     <div class="eq-card">
+      ${e.source==='website'?`<div style="background:#DBEAFE;color:#1E40AF;font-size:12px;font-weight:700;padding:5px 12px;border-radius:100px;display:inline-block;margin-bottom:10px">🌐 Website Lead — submitted from holidaysbyvismora.com</div>`:''}
       <div class="eq-row"><span class="eq-lbl">Name:</span><span>${esc(e.name)}</span></div>
-      <div class="eq-row"><span class="eq-lbl">Email:</span><a href="mailto:${esc(e.email)}" style="color:var(--brand-mid)">${esc(e.email||'—')}</a></div>
       <div class="eq-row"><span class="eq-lbl">Phone:</span><a href="tel:${esc(e.phone)}" style="color:var(--brand-mid)">${esc(e.phone||'—')}</a></div>
+      ${e.email?`<div class="eq-row"><span class="eq-lbl">Email:</span><a href="mailto:${esc(e.email)}" style="color:var(--brand-mid)">${esc(e.email)}</a></div>`:''}
       <div class="eq-row"><span class="eq-lbl">Destination:</span><strong>${esc(e.destination||'—')}</strong></div>
-      <div class="eq-row"><span class="eq-lbl">Travel Date:</span>${esc(e.travelDate||'—')}</div>
-      <div class="eq-row"><span class="eq-lbl">Travellers:</span>${esc(String(e.travellers||'—'))}</div>
-      <div class="eq-row"><span class="eq-lbl">Budget:</span>${esc(e.budget||'—')}</div>
-      <div class="eq-row"><span class="eq-lbl">Message:</span></div>
-      <p style="font-size:13px;background:var(--g50);padding:10px;border-radius:6px;margin-bottom:12px">${esc(e.message||'—')}</p>
+      ${e.travelDate?`<div class="eq-row"><span class="eq-lbl">Travel Date:</span>${esc(e.travelDate)}</div>`:''}
+      ${e.travellers?`<div class="eq-row"><span class="eq-lbl">Travellers:</span>${esc(String(e.travellers))}</div>`:''}
+      ${e.budget?`<div class="eq-row"><span class="eq-lbl">Budget:</span>${esc(e.budget)}</div>`:''}
+      ${e.message?`<div class="eq-row"><span class="eq-lbl">Message:</span></div><p style="font-size:13px;background:var(--g50);padding:10px;border-radius:6px;margin-bottom:12px">${esc(e.message)}</p>`:''}
     </div>
     <div class="fg"><label>Internal Notes</label>
       <textarea id="enq-notes" rows="3" placeholder="Add your notes here...">${esc(e.notes||'')}</textarea>
@@ -1341,10 +1490,12 @@ function wireSettings() {
   });
 
   document.getElementById('clear-btn').addEventListener('click', () => {
-    if (!confirm('This will permanently delete ALL local packages and enquiries. Are you sure?')) return;
+    if (!confirm('This will permanently delete ALL local packages, enquiries and custom destinations. Are you sure?')) return;
     localStorage.removeItem('hbv_packages');
     localStorage.removeItem('hbv_enquiries');
-    state.packages = []; state.enquiries = [];
+    localStorage.removeItem('hbv_custom_dests');
+    state.packages = []; state.enquiries = []; state.customDestinations = [];
+    populateDestinationSelect();
     seedDemoEnquiries();
     renderDashboard();
     toast('Data cleared.', 'success');

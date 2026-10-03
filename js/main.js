@@ -390,22 +390,43 @@ function handleEnquirySubmit(e) {
   const btn = e.target.querySelector('[type=submit]');
   const name = document.getElementById('enq-name')?.value.trim();
   const phone = document.getElementById('enq-phone')?.value.trim();
+  const email = document.getElementById('enq-email')?.value.trim() || '';
   const dest = document.getElementById('enq-destination')?.value || 'General';
+  const travelDate = document.getElementById('enq-travel-date')?.value || '';
+  const travellers = document.getElementById('enq-travellers')?.value || '';
+  const budget = document.getElementById('enq-budget')?.value || '';
+  const message = document.getElementById('enq-message')?.value.trim() || '';
 
   if (!name || !phone) {
     showToast('Please fill in your name and phone number.', 'error');
     return;
   }
 
+  // Save lead to localStorage → auto-appears in admin dashboard
+  try {
+    const enquiries = JSON.parse(localStorage.getItem('hbv_enquiries') || '[]');
+    enquiries.unshift({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      name, phone, email,
+      destination: dest,
+      travelDate, travellers, budget, message,
+      status: 'new',
+      notes: '',
+      source: 'website',
+      createdAt: new Date().toISOString(),
+    });
+    localStorage.setItem('hbv_enquiries', JSON.stringify(enquiries));
+  } catch(err) { /* localStorage unavailable — continue without saving */ }
+
   const msg = encodeURIComponent(
-    `Hi Holidays by Vismora! 🌍\n\nI'd like to enquire about a holiday package.\n\nName: ${name}\nPhone: ${phone}\nDestination: ${dest}\n\nPlease share more details!`
+    `Hi Holidays by Vismora! 🌍\n\nI'd like to enquire about a holiday package.\n\nName: ${name}\nPhone: ${phone}${dest !== 'General' ? '\nDestination: '+dest : ''}${travelDate ? '\nTravel Date: '+travelDate : ''}${travellers ? '\nTravellers: '+travellers : ''}${budget ? '\nBudget: '+budget : ''}${message ? '\n\nMessage: '+message : ''}\n\nPlease share more details!`
   );
 
   btn.textContent = 'Sending…';
   btn.disabled = true;
 
   setTimeout(() => {
-    showToast('✅ Enquiry received! We'll contact you within 2 hours.', 'success');
+    showToast('✅ Enquiry received! We\'ll contact you within 2 hours.', 'success');
     e.target.reset();
     btn.textContent = 'Send Enquiry';
     btn.disabled = false;
