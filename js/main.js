@@ -249,6 +249,15 @@ function buildPackageCard(pkg) {
   const badgeClass = hot ? 'pkg-badge pkg-badge-hot' : 'pkg-badge';
   const waMsg = encodeURIComponent(`Hi! I'm interested in the ${destination} package (${dur}). Please share more details.`);
   const disc = origPrice && price && origPrice > price ? Math.round((1-price/origPrice)*100) : 0;
+  const rating = pkg.rating || 0;
+  const bookedCount = pkg.bookedCount || 0;
+  const ratingStars = rating ? '★'.repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? '½' : '') : '';
+  const ratingHTML = rating ? `
+    <div class="pkg-rating-row">
+      <span class="pkg-stars">${ratingStars}</span>
+      <span class="pkg-rating-val">${rating.toFixed(1)}</span>
+      ${bookedCount ? `<span class="pkg-booked-badge">🔥 ${bookedCount.toLocaleString('en-IN')} booked</span>` : ''}
+    </div>` : (bookedCount ? `<div class="pkg-rating-row"><span class="pkg-booked-badge">🔥 ${bookedCount.toLocaleString('en-IN')} booked</span></div>` : '');
 
   return `
     <div class="pkg-card" data-country="${destination}" data-price="${price}" data-days="${days}">
@@ -262,6 +271,7 @@ function buildPackageCard(pkg) {
       <div class="pkg-card-body">
         <div class="pkg-destination"><a href="package.html?id=${pkgId}" style="color:inherit;text-decoration:none">${destination}</a></div>
         <div class="pkg-country">📍 ${region}</div>
+        ${ratingHTML}
         <ul class="pkg-highlights">${highlights}</ul>
         <div class="pkg-footer">
           <div class="pkg-price">
@@ -573,6 +583,25 @@ function initPackageDetailPage() {
   document.getElementById('pkg-title').textContent = pkg.name || `${destination} Package (${dur})`;
   document.getElementById('pkg-dest-line').innerHTML = `📍 ${destination} &nbsp;·&nbsp; 🕐 ${dur}`;
 
+  // Rating & social proof below title
+  const ratingEl = document.getElementById('pkg-detail-meta');
+  if (ratingEl) {
+    const ratingStars = pkg.rating ? '★'.repeat(Math.floor(pkg.rating)) + (pkg.rating % 1 >= 0.5 ? '★' : '') : '';
+    let metaHTML = '';
+    if (pkg.rating) {
+      metaHTML += `<div class="pkg-rating-big">
+        <span class="pkg-stars-big">${'★'.repeat(Math.floor(pkg.rating))}${'☆'.repeat(5-Math.floor(pkg.rating))}</span>
+        <span class="pkg-rating-big-val">${Number(pkg.rating).toFixed(1)} / 5</span>
+        <span style="font-size:13px;color:var(--text-mid)">Excellent</span>
+      </div>`;
+    }
+    if (pkg.bookedCount) {
+      metaHTML += `<div class="pkg-booked-big">🔥 ${pkg.bookedCount.toLocaleString('en-IN')} people have booked this package</div>`;
+    }
+    ratingEl.innerHTML = metaHTML;
+    ratingEl.style.display = metaHTML ? 'flex' : 'none';
+  }
+
   // Tabs wiring
   document.getElementById('pkg-tabs').addEventListener('click', e => {
     const tab = e.target.closest('.pkg-tab');
@@ -630,6 +659,26 @@ function initPackageDetailPage() {
     pBadge.classList.remove('no-disc');
   } else {
     pBadge.classList.add('no-disc');
+  }
+
+  // Sidebar social proof (rating + booked)
+  const sideProof = document.getElementById('sidebar-social-proof');
+  if (sideProof) {
+    let proofHTML = '';
+    if (pkg.rating) {
+      const stars = '★'.repeat(Math.floor(pkg.rating)) + '☆'.repeat(5-Math.floor(pkg.rating));
+      proofHTML += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="color:#F59E0B;font-size:15px">${stars}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text-dark)">${Number(pkg.rating).toFixed(1)}</span>
+        <span style="font-size:12px;color:var(--text-mid)">/ 5 rating</span>
+      </div>`;
+    }
+    if (pkg.bookedCount) {
+      proofHTML += `<div style="display:flex;align-items:center;gap:6px;background:#FEF3C7;padding:7px 12px;border-radius:100px;font-size:12px;font-weight:700;color:#92400E">
+        🔥 ${pkg.bookedCount.toLocaleString('en-IN')} travellers booked this
+      </div>`;
+    }
+    if (proofHTML) { sideProof.innerHTML = proofHTML; sideProof.style.display = 'block'; }
   }
 
   // Sidebar highlights

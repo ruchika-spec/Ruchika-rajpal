@@ -487,14 +487,29 @@
               <input type="text" id="pkg-badge" placeholder="e.g. Bestseller">
             </div>
           </div>
-          <div style="display:flex;gap:24px;flex-wrap:wrap">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;background:var(--g50);padding:14px 16px;border-radius:var(--rsm);border:1px solid var(--g200);margin-top:4px">
             <div class="tg-wrap">
               <label class="tg"><input type="checkbox" id="pkg-hot"><span class="tg-sl"></span></label>
-              <span class="tg-lbl">🔥 Mark as Hot Deal</span>
+              <span class="tg-lbl">🔥 Hot Deal</span>
             </div>
             <div class="tg-wrap">
               <label class="tg"><input type="checkbox" id="pkg-active" checked><span class="tg-sl"></span></label>
-              <span class="tg-lbl">✅ Active (visible on site)</span>
+              <div>
+                <span class="tg-lbl" id="live-toggle-lbl" style="color:var(--success);font-weight:700">🟢 LIVE on holidaysbyvismora.com</span>
+                <div style="font-size:11px;color:var(--g400);margin-top:1px">Customers can see &amp; book this package</div>
+              </div>
+            </div>
+          </div>
+          <div class="fr" style="margin-top:14px;margin-bottom:0">
+            <div class="fg">
+              <label>⭐ Customer Rating <span style="color:var(--g400)">(out of 5)</span></label>
+              <input type="number" id="pkg-rating" placeholder="e.g. 4.8" min="0" max="5" step="0.1">
+              <div class="fhint">Shows as stars on the package card. Leave blank to hide.</div>
+            </div>
+            <div class="fg">
+              <label>👥 Total Bookings Count</label>
+              <input type="number" id="pkg-booked-count" placeholder="e.g. 127" min="0">
+              <div class="fhint">Social proof — e.g. "127 people booked". Leave blank to hide.</div>
             </div>
           </div>
         </div>
@@ -828,7 +843,7 @@ function renderPkgTableHTML(pkgs) {
   return `<table>
     <thead><tr>
       <th></th><th>Package</th><th>Destination</th><th>Duration</th>
-      <th>Selling Price</th><th>Discount</th><th>Status</th><th>Actions</th>
+      <th>Selling Price</th><th>Discount</th><th>Rating</th><th>Bookings</th><th>Status</th><th>Actions</th>
     </tr></thead>
     <tbody>${pkgs.map(p => {
       const disc = p.origPrice && p.sellPrice ? Math.round((1-p.sellPrice/p.origPrice)*100) : 0;
@@ -840,7 +855,9 @@ function renderPkgTableHTML(pkgs) {
         <td>${p.days}D/${p.nights}N</td>
         <td><strong>₹${fmt(p.sellPrice)}</strong>${p.origPrice?`<br><small style="text-decoration:line-through;color:var(--g400)">₹${fmt(p.origPrice)}</small>`:''}</td>
         <td>${disc>0?`<span class="badge" style="background:#D1FAE5;color:#065F46">${disc}% off</span>`:'—'}</td>
-        <td><span class="badge ${p.status==='active'?'ba':'bd'}">${p.status}</span></td>
+        <td>${p.rating ? `<span style="color:#F59E0B;font-weight:700">★ ${p.rating}</span>` : '<span style="color:var(--g300)">—</span>'}</td>
+        <td>${p.bookedCount ? `<span style="font-weight:700;color:var(--brand-mid)">${fmt(p.bookedCount)}</span>` : '<span style="color:var(--g300)">—</span>'}</td>
+        <td><span class="badge ${p.status==='active'?'ba':'bd'}">${p.status==='active'?'🟢 Live':'⚫ Draft'}</span></td>
         <td><div class="acts">
           <button class="btn btn-outline btn-xs" data-action="edit" data-id="${p.id}">✏️ Edit</button>
           <button class="btn btn-xs" style="background:#FEE2E2;color:var(--danger)" data-action="delete" data-id="${p.id}">🗑️</button>
@@ -988,6 +1005,18 @@ function wirePackageModal() {
   document.getElementById('pkg-hero-img').addEventListener('input', e => updateImgPreview(e.target.value, 'hero-preview', 'hero-ph'));
   document.getElementById('pkg-card-img').addEventListener('input', e => updateImgPreview(e.target.value, 'card-preview', 'card-ph'));
 
+  // Live toggle label update
+  document.getElementById('pkg-active').addEventListener('change', e => {
+    const lbl = document.getElementById('live-toggle-lbl');
+    if (e.target.checked) {
+      lbl.textContent = '🟢 LIVE on holidaysbyvismora.com';
+      lbl.style.color = 'var(--success)';
+    } else {
+      lbl.textContent = '⚫ Draft — hidden from customers';
+      lbl.style.color = 'var(--g400)';
+    }
+  });
+
   // Days → itinerary
   document.getElementById('pkg-days').addEventListener('input', syncItinerary);
 
@@ -1032,12 +1061,15 @@ function closePackageModal() {
 
 function resetPackageForm() {
   ['pkg-name','pkg-dest','pkg-days','pkg-nights','pkg-badge','pkg-orig-price','pkg-sell-price',
-   'pkg-hero-img','pkg-card-img','pkg-tagline','pkg-about','pkg-terms'].forEach(id => {
+   'pkg-hero-img','pkg-card-img','pkg-tagline','pkg-about','pkg-terms',
+   'pkg-rating','pkg-booked-count'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('pkg-hot').checked = false;
   document.getElementById('pkg-active').checked = true;
+  const lbl = document.getElementById('live-toggle-lbl');
+  if (lbl) { lbl.textContent = '🟢 LIVE on holidaysbyvismora.com'; lbl.style.color = 'var(--success)'; }
   document.getElementById('pkg-price-type').value = 'person';
   updatePricePreview();
   updateImgPreview('', 'hero-preview', 'hero-ph');
@@ -1066,6 +1098,13 @@ function populatePackageForm(pkg) {
   document.getElementById('pkg-price-type').value = pkg.priceType || 'person';
   document.getElementById('pkg-hot').checked = pkg.hot || false;
   document.getElementById('pkg-active').checked = pkg.status === 'active';
+  document.getElementById('pkg-rating').value = pkg.rating || '';
+  document.getElementById('pkg-booked-count').value = pkg.bookedCount || '';
+  const lbl = document.getElementById('live-toggle-lbl');
+  if (lbl) {
+    lbl.textContent = pkg.status === 'active' ? '🟢 LIVE on holidaysbyvismora.com' : '⚫ Draft — hidden from customers';
+    lbl.style.color = pkg.status === 'active' ? 'var(--success)' : 'var(--g400)';
+  }
   document.getElementById('pkg-hero-img').value = pkg.heroImg || '';
   document.getElementById('pkg-card-img').value = pkg.cardImg || '';
   document.getElementById('pkg-tagline').value = pkg.tagline || '';
@@ -1119,6 +1158,8 @@ function savePackage() {
     exclusions: getBulletValues('exclusions-list'),
     itinerary: getItineraryData(),
     terms: document.getElementById('pkg-terms').value.trim(),
+    rating: parseFloat(document.getElementById('pkg-rating').value) || 0,
+    bookedCount: parseInt(document.getElementById('pkg-booked-count').value) || 0,
     updatedAt: new Date().toISOString(),
     createdAt: state.editingPkg
       ? (state.packages.find(p=>p.id===state.editingPkg)?.createdAt||new Date().toISOString())
