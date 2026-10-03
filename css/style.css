@@ -45,8 +45,8 @@ ul { list-style: none; }
 
 /* ===== UTILITY ===== */
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-.section-pad { padding: 80px 0; }
-.section-pad-sm { padding: 56px 0; }
+.section-pad { padding: 60px 0; }
+.section-pad-sm { padding: 40px 0; }
 .text-center { text-align: center; }
 .flex { display: flex; }
 .flex-center { display: flex; align-items: center; justify-content: center; }
@@ -1321,7 +1321,7 @@ footer {
 /* ===== CTA STRIP ===== */
 .cta-strip {
   background: var(--brand-mid);
-  padding: 72px 0;
+  padding: 56px 0;
 }
 
 .cta-strip-inner {
