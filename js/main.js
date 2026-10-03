@@ -726,7 +726,7 @@ function initPackageDetailPage() {
   }
 }
 
-// ===== GET ALL PACKAGES (admin CMS + built-in) =====
+// ===== GET ALL PACKAGES (admin CMS cache + built-in fallback) =====
 function getAllPackages() {
   try {
     const adminPkgs = JSON.parse(localStorage.getItem('hbv_packages') || '[]');
@@ -734,6 +734,42 @@ function getAllPackages() {
     if (active.length > 0) return active;
   } catch(e) {}
   return packages;
+}
+
+// Fetch fresh packages from Supabase, update localStorage, re-render affected grids
+async function refreshFromSupabase() {
+  const SB_URL = 'https://iqpilmnrdclgdosrhwso.supabase.co';
+  const SB_KEY = 'sb_publishable_C828WqfS3rzikcRyu68ybg_SazRcXLA';
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/packages?status=eq.active&order=created_at.desc`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Accept': 'application/json' } }
+    );
+    if (!res.ok) return;
+    const rows = await res.json();
+    const pkgs = rows.map(r => ({
+      id: r.id, name: r.name, destination: r.destination,
+      country: r.destination, region: r.destination,
+      days: r.days, duration: r.days, nights: r.nights,
+      price: r.sell_price, origPrice: r.orig_price, sellPrice: r.sell_price,
+      priceType: r.price_type,
+      image: r.card_img || r.hero_img,
+      heroImg: r.hero_img, cardImg: r.card_img,
+      gallery: r.gallery || [], badge: r.badge, hot: r.hot, status: r.status,
+      highlights: r.highlights || [], inclusions: r.inclusions || [],
+      exclusions: r.exclusions || [], itinerary: r.itinerary || [],
+      about: r.about, tagline: r.tagline, terms: r.terms,
+      rating: r.rating, bookedCount: r.booked_count,
+      createdAt: r.created_at,
+    }));
+    if (!pkgs.length) return;
+    localStorage.setItem('hbv_packages', JSON.stringify(pkgs));
+    // Re-render grids if they exist on this page
+    const homeGrid = document.querySelector('#packages-grid[data-page="home"]');
+    if (homeGrid) renderPackages(pkgs.slice(0, 6), 'packages-grid');
+    const pkgsGrid = document.querySelector('#packages-grid[data-page="packages"]');
+    if (pkgsGrid) applyFilters();
+  } catch(e) { /* silent fail — site works from cache */ }
 }
 
 // ===== INIT =====
@@ -795,4 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (form) form.addEventListener('submit', handleEnquirySubmit);
 
   wireEnquireButtons();
+
+  // Refresh packages from Supabase in background — keeps site live even across browsers
+  refreshFromSupabase();
 });

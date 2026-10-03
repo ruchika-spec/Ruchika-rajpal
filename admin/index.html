@@ -345,7 +345,9 @@
     <div class="mc">
       <div class="tb">
         <div class="tb-title" id="tb-title">Dashboard</div>
-        <div class="tb-acts" id="tb-acts"></div>
+        <div class="tb-acts" id="tb-acts">
+          <span id="sync-status" style="font-size:12px;font-weight:600;color:var(--g400)">⚡ Offline mode</span>
+        </div>
       </div>
 
       <div class="pc">
@@ -683,12 +685,156 @@
 <!-- ===== TOAST ===== -->
 <div class="toast-container" id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ===== CONFIG =====
 const ADMIN_PASSWORD = 'hbv2025';
-const SUPABASE_URL_DEFAULT = 'https://iqpilmnrdclgdosrhwso.supabase.co';
-let SUPABASE_KEY = localStorage.getItem('hbv_sb_key') || '';
-let SUPABASE_URL = localStorage.getItem('hbv_sb_url') || SUPABASE_URL_DEFAULT;
+const SUPABASE_URL = 'https://iqpilmnrdclgdosrhwso.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_C828WqfS3rzikcRyu68ybg_SazRcXLA';
+
+let sb = null;
+
+function initSupabase() {
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return true;
+  } catch(e) { console.error('Supabase init failed', e); return false; }
+}
+
+// ===== DB MAPPERS (camelCase JS ↔ snake_case DB) =====
+function pkgToDb(p) {
+  return {
+    id: p.id, name: p.name, destination: p.destination,
+    days: p.days||0, nights: p.nights||0, badge: p.badge||'',
+    hot: !!p.hot, status: p.status||'draft',
+    orig_price: p.origPrice||0, sell_price: p.sellPrice||0,
+    price_type: p.priceType||'person',
+    hero_img: p.heroImg||'', card_img: p.cardImg||'',
+    gallery: p.gallery||[], tagline: p.tagline||'',
+    about: p.about||'', highlights: p.highlights||[],
+    inclusions: p.inclusions||[], exclusions: p.exclusions||[],
+    itinerary: p.itinerary||[], terms: p.terms||'',
+    rating: p.rating||0, booked_count: p.bookedCount||0,
+    updated_at: new Date().toISOString(),
+  };
+}
+function dbToPkg(r) {
+  return {
+    id: r.id, name: r.name, destination: r.destination,
+    days: r.days, nights: r.nights, badge: r.badge,
+    hot: r.hot, status: r.status,
+    origPrice: r.orig_price, sellPrice: r.sell_price,
+    priceType: r.price_type,
+    heroImg: r.hero_img, cardImg: r.card_img,
+    gallery: r.gallery||[], tagline: r.tagline,
+    about: r.about, highlights: r.highlights||[],
+    inclusions: r.inclusions||[], exclusions: r.exclusions||[],
+    itinerary: r.itinerary||[], terms: r.terms,
+    rating: r.rating, bookedCount: r.booked_count,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+  };
+}
+function enqToDb(e) {
+  return {
+    id: e.id, name: e.name, phone: e.phone, email: e.email||'',
+    destination: e.destination||'', travel_date: e.travelDate||'',
+    travellers: String(e.travellers||''), budget: e.budget||'',
+    message: e.message||'', status: e.status||'new',
+    notes: e.notes||'', source: e.source||'manual',
+    created_at: e.createdAt,
+  };
+}
+function dbToEnq(r) {
+  return {
+    id: r.id, name: r.name, phone: r.phone, email: r.email,
+    destination: r.destination, travelDate: r.travel_date,
+    travellers: r.travellers, budget: r.budget,
+    message: r.message, status: r.status,
+    notes: r.notes, source: r.source,
+    createdAt: r.created_at,
+  };
+}
+
+// ===== SYNC STATUS =====
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    syncing: { text: '↑ Syncing…',    color: 'var(--warning)' },
+    synced:  { text: '✓ All synced',  color: 'var(--success)' },
+    offline: { text: '⚡ Offline mode', color: 'var(--g400)'  },
+    error:   { text: '⚠ Sync error',  color: 'var(--danger)'  },
+  };
+  const s = map[status] || map.offline;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+// Load fresh data from Supabase and merge with any unsynced local leads
+async function loadFromSupabase() {
+  if (!sb) { setSyncStatus('offline'); return; }
+  setSyncStatus('syncing');
+  try {
+    const [pkgRes, enqRes, destRes] = await Promise.all([
+      sb.from('packages').select('*').order('created_at', { ascending: false }),
+      sb.from('enquiries').select('*').order('created_at', { ascending: false }),
+      sb.from('custom_destinations').select('name'),
+    ]);
+    if (!pkgRes.error && pkgRes.data) {
+      state.packages = pkgRes.data.map(dbToPkg);
+      localStorage.setItem('hbv_packages', JSON.stringify(state.packages));
+    }
+    if (!enqRes.error && enqRes.data) {
+      const sbEnqs = enqRes.data.map(dbToEnq);
+      const sbIds = new Set(sbEnqs.map(e => e.id));
+      // Merge any local website leads not yet in Supabase
+      const localEnqs = JSON.parse(localStorage.getItem('hbv_enquiries') || '[]');
+      const newLocal = localEnqs.filter(e => !sbIds.has(e.id));
+      if (newLocal.length) {
+        await sb.from('enquiries').upsert(newLocal.map(enqToDb));
+        state.enquiries = [...newLocal, ...sbEnqs];
+      } else {
+        state.enquiries = sbEnqs;
+      }
+      localStorage.setItem('hbv_enquiries', JSON.stringify(state.enquiries));
+    }
+    if (!destRes.error && destRes.data) {
+      state.customDestinations = destRes.data.map(r => r.name);
+      localStorage.setItem('hbv_custom_dests', JSON.stringify(state.customDestinations));
+    }
+    setSyncStatus('synced');
+  } catch(e) {
+    setSyncStatus('error');
+  }
+}
+
+async function pushToSupabase(pkg, op = 'upsert') {
+  if (!sb) return;
+  setSyncStatus('syncing');
+  try {
+    if (op === 'delete') {
+      await sb.from('packages').delete().eq('id', pkg.id);
+    } else {
+      await sb.from('packages').upsert(pkgToDb(pkg));
+    }
+    setSyncStatus('synced');
+  } catch(e) { setSyncStatus('error'); }
+}
+
+async function pushEnqToSupabase(enq) {
+  if (!sb) return;
+  try { await sb.from('enquiries').upsert(enqToDb(enq)); } catch(e) {}
+}
+
+async function pushDestToSupabase(name) {
+  if (!sb) return;
+  try { await sb.from('custom_destinations').upsert({ name }, { onConflict: 'name' }); } catch(e) {}
+}
+
+async function deleteDestFromSupabase(name) {
+  if (!sb) return;
+  try { await sb.from('custom_destinations').delete().eq('name', name); } catch(e) {}
+}
 
 // ===== PRESET DESTINATIONS =====
 const PRESET_DESTINATIONS = [
@@ -720,6 +866,7 @@ let state = {
 
 // ===== INIT =====
 function init() {
+  initSupabase();
   loadData();
   wireLogin();
   wireNav();
@@ -750,6 +897,15 @@ function saveData() {
   localStorage.setItem('hbv_enquiries', JSON.stringify(state.enquiries));
   localStorage.setItem('hbv_custom_dests', JSON.stringify(state.customDestinations));
   updateBadges();
+}
+
+// Called after login — fetches fresh data from Supabase and re-renders
+async function syncOnLogin() {
+  await loadFromSupabase();
+  populateDestinationSelect();
+  renderDashboard();
+  if (state.currentSection === 'packages') renderPackagesTable();
+  if (state.currentSection === 'enquiries') renderEnquiriesTable();
 }
 
 // ===== DESTINATIONS =====
@@ -788,12 +944,14 @@ function renderDestinationsPage() {
   // Wire delete buttons
   grid.querySelectorAll('[data-action="del-dest"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (!confirm(`Remove "${btn.dataset.dest}" from destinations?`)) return;
-      state.customDestinations = state.customDestinations.filter(d => d !== btn.dataset.dest);
+      const destName = btn.dataset.dest;
+      if (!confirm(`Remove "${destName}" from destinations?`)) return;
+      state.customDestinations = state.customDestinations.filter(d => d !== destName);
       saveData();
       populateDestinationSelect();
       renderDestinationsPage();
       toast('Destination removed.', 'success');
+      deleteDestFromSupabase(destName);
     });
   });
 }
@@ -831,6 +989,7 @@ function addCustomDestination() {
   renderDestinationsPage();
   input.value = '';
   toast(`"${val}" added! It's now available in the package form.`, 'success');
+  pushDestToSupabase(val);
 }
 
 function seedDemoEnquiries() {
@@ -873,8 +1032,8 @@ function attemptLogin() {
   if (pw === ADMIN_PASSWORD) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
-    if (!SUPABASE_KEY) document.getElementById('supabase-banner').style.display = 'flex';
     renderDashboard();
+    syncOnLogin(); // fetch fresh data from Supabase in background
   } else {
     err.style.display = 'block';
     document.getElementById('pw-input').focus();
@@ -1019,12 +1178,14 @@ function wirePkgActions(container) {
     b.addEventListener('click', () => deletePackage(b.dataset.id)));
 }
 
-function deletePackage(id) {
+async function deletePackage(id) {
   if (!confirm('Delete this package? This cannot be undone.')) return;
+  const pkg = state.packages.find(p => p.id === id);
   state.packages = state.packages.filter(p => p.id !== id);
   saveData();
   toast('Package deleted.', 'success');
   renderPackagesTable(document.getElementById('pkg-search')?.value || '');
+  if (pkg) await pushToSupabase(pkg, 'delete');
 }
 
 // ===== ENQUIRIES TABLE =====
@@ -1073,7 +1234,7 @@ function wireEnqActions(container) {
   container.querySelectorAll('.status-sel').forEach(sel => {
     sel.addEventListener('change', () => {
       const enq = state.enquiries.find(e => e.id === sel.dataset.id);
-      if (enq) { enq.status = sel.value; saveData(); toast('Status updated.', 'success'); }
+      if (enq) { enq.status = sel.value; saveData(); toast('Status updated.', 'success'); pushEnqToSupabase(enq); }
     });
   });
   container.querySelectorAll('[data-action="view-enq"]').forEach(b =>
@@ -1118,6 +1279,7 @@ function openEnquiryModal(id) {
       enq.status = document.getElementById('enq-status-modal').value;
       saveData();
       toast('Enquiry updated!', 'success');
+      pushEnqToSupabase(enq);
       document.getElementById('enq-modal').classList.remove('open');
       if (state.currentSection === 'enquiries') renderEnquiriesTable();
     }
@@ -1327,6 +1489,7 @@ function savePackage() {
   toast(state.editingPkg ? 'Package updated!' : 'Package added!', 'success');
   renderPackagesTable(document.getElementById('pkg-search')?.value||'');
   if (state.currentSection === 'dashboard') renderDashboard();
+  pushToSupabase(pkg); // sync to Supabase in background
 }
 
 function switchToTab(tabId) {
@@ -1463,21 +1626,31 @@ function getGalleryUrls() {
 
 // ===== SETTINGS =====
 function wireSettings() {
-  document.getElementById('save-sb-btn').addEventListener('click', () => {
-    const url = document.getElementById('sb-url').value.trim();
-    const key = document.getElementById('sb-key').value.trim();
-    if (!key) { toast('Please enter the Supabase Anon Key.','error'); return; }
-    SUPABASE_URL = url;
-    SUPABASE_KEY = key;
-    localStorage.setItem('hbv_sb_url', url);
-    localStorage.setItem('hbv_sb_key', key);
-    document.getElementById('sb-status').innerHTML = `<span style="color:var(--success)">✅ Settings saved. Add the schema and test your connection.</span>`;
-    document.getElementById('supabase-banner').style.display = 'none';
-    toast('Supabase settings saved!', 'success');
-  });
+  // Supabase is now hardcoded — show live status
+  const sbStatus = document.getElementById('sb-status');
+  if (sbStatus) {
+    sbStatus.innerHTML = sb
+      ? `<span style="color:var(--success)">✅ Connected to Supabase — all data syncs across browsers automatically.</span>`
+      : `<span style="color:var(--danger)">⚠ Supabase client failed to initialise. Check console for errors.</span>`;
+  }
 
-  document.getElementById('sb-url').value = SUPABASE_URL;
-  document.getElementById('sb-key').value = SUPABASE_KEY;
+  const saveSbBtn = document.getElementById('save-sb-btn');
+  if (saveSbBtn) {
+    saveSbBtn.textContent = '↻ Sync Now';
+    saveSbBtn.addEventListener('click', async () => {
+      saveSbBtn.disabled = true;
+      saveSbBtn.textContent = 'Syncing…';
+      await syncOnLogin();
+      saveSbBtn.disabled = false;
+      saveSbBtn.textContent = '↻ Sync Now';
+      toast('Synced with Supabase!', 'success');
+    });
+  }
+
+  const sbUrlEl = document.getElementById('sb-url');
+  const sbKeyEl = document.getElementById('sb-key');
+  if (sbUrlEl) { sbUrlEl.value = SUPABASE_URL; sbUrlEl.disabled = true; }
+  if (sbKeyEl) { sbKeyEl.value = '(hardcoded — contact developer to change)'; sbKeyEl.disabled = true; }
 
   document.getElementById('export-btn').addEventListener('click', () => {
     const data = { packages: state.packages, enquiries: state.enquiries, exportedAt: new Date().toISOString() };
