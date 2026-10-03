@@ -386,31 +386,37 @@ function wireEnquireButtons(scope) {
   });
 }
 
-function handleEnquirySubmit(e) {
+async function handleEnquirySubmit(e) {
   e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
-  const name = document.getElementById('enq-name')?.value.trim();
-  const phone = document.getElementById('enq-phone')?.value.trim();
-  const email = document.getElementById('enq-email')?.value.trim() || '';
-  const dest = document.getElementById('enq-destination')?.value || 'General';
-  const travelDate = document.getElementById('enq-travel-date')?.value || '';
-  const travellers = document.getElementById('enq-travellers')?.value || '';
-  const budget = document.getElementById('enq-budget')?.value || '';
-  const message = document.getElementById('enq-message')?.value.trim() || '';
+  const form = e.target;
+  const btn = form.querySelector('[type=submit]');
+
+  // Read fields from whichever form was submitted (supports both id= and name= attributes)
+  const get = (n) => (form.querySelector(`[name="${n}"]`) || form.querySelector(`#${n}`))?.value?.trim() || '';
+  const name       = get('enq-name');
+  const phone      = get('enq-phone');
+  const email      = get('enq-email');
+  const dest       = get('enq-destination') || 'General';
+  const travelDate = get('enq-date') || get('enq-travel-date');
+  const travellers = get('enq-pax') || get('enq-travellers');
+  const budget     = get('enq-budget');
+  const message    = get('enq-notes') || get('enq-message');
 
   if (!name || !phone) {
     showToast('Please fill in your name and phone number.', 'error');
     return;
   }
 
-  // Save lead to localStorage + push directly to Supabase
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+
+  // Save to localStorage
   const enqId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const createdAt = new Date().toISOString();
   const enqRecord = {
     id: enqId, name, phone, email,
-    destination: dest,
-    travelDate, travellers, budget, message,
-    status: 'new', notes: '', source: 'website',
-    createdAt: new Date().toISOString(),
+    destination: dest, travelDate, travellers, budget, message,
+    status: 'new', notes: '', source: 'website', createdAt,
   };
   try {
     const enquiries = JSON.parse(localStorage.getItem('hbv_enquiries') || '[]');
@@ -418,52 +424,44 @@ function handleEnquirySubmit(e) {
     localStorage.setItem('hbv_enquiries', JSON.stringify(enquiries));
   } catch(err) {}
 
-  // Push enquiry to Supabase so admin team sees it on any device
-  (async () => {
-    try {
-      const SB_URL = 'https://iqpilmnrdclgdosrhwso.supabase.co';
-      const SB_KEY = 'sb_publishable_C828WqfS3rzikcRyu68ybg_SazRcXLA';
-      await fetch(`${SB_URL}/rest/v1/enquiries`, {
-        method: 'POST',
-        headers: {
-          'apikey': SB_KEY,
-          'Authorization': `Bearer ${SB_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify({
-          id: enqRecord.id,
-          name: enqRecord.name,
-          phone: enqRecord.phone,
-          email: enqRecord.email || '',
-          destination: enqRecord.destination || '',
-          travel_date: enqRecord.travelDate || '',
-          travellers: String(enqRecord.travellers || ''),
-          budget: enqRecord.budget || '',
-          message: enqRecord.message || '',
-          status: 'new',
-          notes: '',
-          source: 'website',
-          created_at: enqRecord.createdAt,
-        }),
-      });
-    } catch(err) { /* silent — WhatsApp redirect still happens */ }
-  })();
+  // Await Supabase POST so it completes before we do anything else
+  try {
+    const SB_URL = 'https://iqpilmnrdclgdosrhwso.supabase.co';
+    const SB_KEY = 'sb_publishable_C828WqfS3rzikcRyu68ybg_SazRcXLA';
+    await fetch(`${SB_URL}/rest/v1/enquiries`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        id: enqId, name, phone, email: email || '',
+        destination: dest, travel_date: travelDate || '',
+        travellers: String(travellers || ''), budget: budget || '',
+        message: message || '', status: 'new', notes: '',
+        source: 'website', created_at: createdAt,
+      }),
+    });
+  } catch(err) { /* network error — lead still saved in localStorage */ }
 
-  const msg = encodeURIComponent(
+  // Build WhatsApp URL for the optional button
+  const waMsg = encodeURIComponent(
     `Hi Holidays by Vismora! 🌍\n\nI'd like to enquire about a holiday package.\n\nName: ${name}\nPhone: ${phone}${dest !== 'General' ? '\nDestination: '+dest : ''}${travelDate ? '\nTravel Date: '+travelDate : ''}${travellers ? '\nTravellers: '+travellers : ''}${budget ? '\nBudget: '+budget : ''}${message ? '\n\nMessage: '+message : ''}\n\nPlease share more details!`
   );
 
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
-
-  setTimeout(() => {
-    showToast('✅ Enquiry received! We\'ll contact you within 2 hours.', 'success');
-    e.target.reset();
-    btn.textContent = 'Send Enquiry';
-    btn.disabled = false;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
-  }, 800);
+  // Show inline thank-you — replace form content
+  form.innerHTML = `
+    <div class="enq-thankyou">
+      <div class="enq-thankyou-icon">✅</div>
+      <h3>Thank you, ${name}!</h3>
+      <p>Our team will be in touch with you shortly.<br>We usually respond within 2 hours.</p>
+      <a class="btn btn-wa enq-wa-btn" href="https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}" target="_blank" rel="noopener">
+        Chat on WhatsApp
+      </a>
+    </div>
+  `;
 }
 
 // ===== TOAST =====
@@ -875,9 +873,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchBtn = document.getElementById('hero-search-btn');
   if (searchBtn) searchBtn.addEventListener('click', heroSearch);
 
-  // Enquiry form
-  const form = document.getElementById('enquiry-form');
-  if (form) form.addEventListener('submit', handleEnquirySubmit);
+  // Enquiry forms (hero + section)
+  ['enquiry-form', 'enquiry-form-section'].forEach(id => {
+    const f = document.getElementById(id);
+    if (f) f.addEventListener('submit', handleEnquirySubmit);
+  });
 
   wireEnquireButtons();
 
