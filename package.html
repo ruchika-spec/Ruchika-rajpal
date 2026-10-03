@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Package Details — Holidays by Vismora</title>
+  <meta name="description" id="page-desc" content="Holiday package details.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Package detail layout */
+    .pkg-detail-wrap { display:grid; grid-template-columns:1fr 380px; gap:32px; align-items:flex-start; margin-top:32px; }
+    .pkg-detail-content { min-width:0; }
+
+    /* Gallery */
+    .pkg-gallery { border-radius:var(--radius-lg); overflow:hidden; margin-bottom:8px; }
+    .pkg-gallery-main { width:100%; height:420px; object-fit:cover; display:block; }
+    .pkg-gallery-thumbs { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+    .pkg-gallery-thumb { width:80px; height:58px; object-fit:cover; border-radius:8px; cursor:pointer;
+      border:2px solid transparent; transition:border-color .2s; flex-shrink:0; }
+    .pkg-gallery-thumb:hover, .pkg-gallery-thumb.active { border-color:var(--brand-mid); }
+
+    /* Tabs */
+    .pkg-tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin:28px 0 20px; overflow-x:auto; }
+    .pkg-tab { padding:10px 18px; font-size:14px; font-weight:600; color:var(--text-mid);
+      cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; transition:all .2s; }
+    .pkg-tab:hover { color:var(--brand-mid); }
+    .pkg-tab.active { color:var(--brand-mid); border-bottom-color:var(--brand-mid); }
+    .pkg-tab-panel { display:none; }
+    .pkg-tab-panel.active { display:block; }
+
+    /* Itinerary */
+    .iti-list { display:flex; flex-direction:column; gap:16px; }
+    .iti-item { display:flex; gap:16px; }
+    .iti-left { display:flex; flex-direction:column; align-items:center; gap:0; flex-shrink:0; }
+    .iti-day-num { background:var(--brand-mid); color:#fff; font-size:11px; font-weight:800;
+      padding:4px 10px; border-radius:100px; white-space:nowrap; }
+    .iti-line { width:2px; flex:1; background:var(--border); margin:6px 0; min-height:20px; }
+    .iti-item:last-child .iti-line { display:none; }
+    .iti-right { padding-bottom:20px; }
+    .iti-title { font-size:15px; font-weight:800; color:var(--text-dark); margin-bottom:6px; }
+    .iti-desc { font-size:14px; color:var(--text-mid); line-height:1.7; }
+
+    /* Inclusions / Exclusions */
+    .inc-exc-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .inc-block, .exc-block { }
+    .inc-title, .exc-title { font-size:15px; font-weight:800; color:var(--text-dark); margin-bottom:14px;
+      display:flex; align-items:center; gap:8px; }
+    .inc-list, .exc-list { display:flex; flex-direction:column; gap:8px; }
+    .inc-item, .exc-item { display:flex; align-items:flex-start; gap:8px; font-size:14px; line-height:1.5; }
+    .inc-icon { color:var(--success); font-size:14px; flex-shrink:0; margin-top:1px; }
+    .exc-icon { color:#EF4444; font-size:14px; flex-shrink:0; margin-top:1px; }
+
+    /* Terms */
+    .terms-content { font-size:14px; color:var(--text-mid); line-height:1.8; white-space:pre-line; }
+
+    /* ===== SIDEBAR (Pricing Card) ===== */
+    .pkg-sidebar { position:sticky; top:80px; }
+    .pricing-card { background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-lg);
+      overflow:hidden; border:1px solid var(--border); }
+    .pricing-card-header { background:var(--brand); padding:20px 24px; }
+    .pricing-card-dest { font-size:12px; font-weight:700; color:rgba(255,255,255,.7); text-transform:uppercase;
+      letter-spacing:.5px; margin-bottom:4px; }
+    .pricing-card-name { font-size:18px; font-weight:800; color:#fff; line-height:1.2; }
+    .pricing-card-dur { font-size:13px; color:rgba(255,255,255,.75); margin-top:6px; }
+    .pricing-card-body { padding:24px; }
+
+    /* Price display */
+    .price-original { font-size:14px; color:var(--text-mid); }
+    .price-original span { text-decoration:line-through; }
+    .price-main { font-size:36px; font-weight:900; color:var(--brand-mid); line-height:1; margin:6px 0; }
+    .price-per { font-size:13px; color:var(--text-mid); margin-bottom:12px; }
+    .price-badge { display:inline-block; background:#D1FAE5; color:#065F46;
+      font-size:13px; font-weight:700; padding:4px 14px; border-radius:100px; margin-bottom:16px; }
+    .price-badge.no-disc { display:none; }
+
+    /* CTA buttons */
+    .pricing-ctas { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+    .pricing-ctas .btn { width:100%; justify-content:center; font-size:15px; padding:14px; }
+
+    /* Trust badges */
+    .pricing-trust { display:flex; flex-direction:column; gap:6px; padding-top:16px;
+      border-top:1px solid var(--border); }
+    .pt-item { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-mid); }
+    .pt-icon { font-size:14px; }
+
+    /* Package header */
+    .pkg-header { margin-bottom:4px; }
+    .pkg-header-badges { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .pkg-header-title { font-size:clamp(22px,3vw,32px); font-weight:900; color:var(--text-dark); line-height:1.15; margin-bottom:8px; }
+    .pkg-header-dest { font-size:15px; color:var(--text-mid); display:flex; align-items:center; gap:6px; }
+
+    /* Overview */
+    .pkg-about { font-size:15px; color:var(--text-mid); line-height:1.8; margin-bottom:20px; }
+    .highlights-list { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .hl-item { display:flex; align-items:flex-start; gap:8px; font-size:14px; color:var(--text-dark); }
+    .hl-icon { color:var(--brand-mid); font-size:14px; flex-shrink:0; margin-top:2px; }
+
+    @media(max-width:1100px) {
+      .pkg-detail-wrap { grid-template-columns:1fr; }
+      .pkg-sidebar { position:static; }
+      .pricing-card { max-width:480px; }
+    }
+    @media(max-width:768px) {
+      .pkg-gallery-main { height:260px; }
+      .inc-exc-grid { grid-template-columns:1fr; }
+      .highlights-list { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-text">
+          <span class="brand-main">Holidays</span>
+          <span class="brand-sub">by V&nbsp;✦&nbsp;ismora</span>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="packages.html">Packages</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="index.html#enquiry">Contact</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:transparent;border:2px solid #25D366;color:#25D366;gap:6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
+        </a>
+        <a href="index.html#enquiry" class="btn btn-primary btn-sm">Plan My Holiday</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<!-- Page Hero -->
+<div class="page-hero" id="page-hero-section">
+  <div class="container">
+    <div class="breadcrumb" id="pkg-breadcrumb">
+      <a href="index.html">Home</a>
+      <span class="sep">›</span>
+      <a href="packages.html">Packages</a>
+      <span class="sep">›</span>
+      <span id="pkg-bc-dest">Loading</span>
+      <span class="sep">›</span>
+      <span id="pkg-bc-name">Loading</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="pkg-detail-wrap">
+
+    <!-- Left: Content -->
+    <div class="pkg-detail-content">
+
+      <!-- Gallery -->
+      <div class="pkg-gallery">
+        <img id="gallery-main" class="pkg-gallery-main" src="" alt="Package Image">
+        <div class="pkg-gallery-thumbs" id="gallery-thumbs"></div>
+      </div>
+
+      <!-- Header -->
+      <div class="pkg-header">
+        <div class="pkg-header-badges" id="pkg-badges"></div>
+        <h1 class="pkg-header-title" id="pkg-title">Loading...</h1>
+        <div class="pkg-header-dest" id="pkg-dest-line"></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="pkg-tabs" id="pkg-tabs">
+        <div class="pkg-tab active" data-tab="overview">Overview</div>
+        <div class="pkg-tab" data-tab="itinerary">Day-by-Day</div>
+        <div class="pkg-tab" data-tab="inclusions">Inclusions</div>
+        <div class="pkg-tab" data-tab="terms">Terms</div>
+      </div>
+
+      <!-- Tab: Overview -->
+      <div class="pkg-tab-panel active" id="tab-overview">
+        <p class="pkg-about" id="pkg-about-text"></p>
+        <div class="highlights-list" id="pkg-highlights"></div>
+      </div>
+
+      <!-- Tab: Itinerary -->
+      <div class="pkg-tab-panel" id="tab-itinerary">
+        <div class="iti-list" id="pkg-itinerary"></div>
+      </div>
+
+      <!-- Tab: Inclusions -->
+      <div class="pkg-tab-panel" id="tab-inclusions">
+        <div class="inc-exc-grid">
+          <div class="inc-block">
+            <div class="inc-title">✅ What's Included</div>
+            <div class="inc-list" id="pkg-inclusions"></div>
+          </div>
+          <div class="exc-block">
+            <div class="exc-title">❌ What's Not Included</div>
+            <div class="exc-list" id="pkg-exclusions"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Terms -->
+      <div class="pkg-tab-panel" id="tab-terms">
+        <div class="terms-content" id="pkg-terms"></div>
+      </div>
+
+    </div><!-- /pkg-detail-content -->
+
+    <!-- Right: Sidebar (Pricing) -->
+    <div class="pkg-sidebar">
+      <div class="pricing-card">
+        <div class="pricing-card-header">
+          <div class="pricing-card-dest" id="pc-dest"></div>
+          <div class="pricing-card-name" id="pc-name"></div>
+          <div class="pricing-card-dur" id="pc-dur"></div>
+        </div>
+        <div class="pricing-card-body">
+          <div class="price-original" id="pc-original"></div>
+          <div class="price-main" id="pc-price"></div>
+          <div class="price-per" id="pc-per"></div>
+          <div class="price-badge" id="pc-badge"></div>
+          <div class="pricing-ctas">
+            <a href="index.html#enquiry" class="btn btn-primary">📋 Enquire Now</a>
+            <a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="btn btn-lg" style="background:#E7F9EE;color:#15803D;font-size:14px;padding:13px;">💬 WhatsApp Us</a>
+          </div>
+          <div class="pricing-trust">
+            <div class="pt-item"><span class="pt-icon">🔒</span> Secure booking, no hidden charges</div>
+            <div class="pt-item"><span class="pt-icon">💬</span> Response within 2 hours</div>
+            <div class="pt-item"><span class="pt-icon">✈️</span> Visa support included</div>
+            <div class="pt-item"><span class="pt-icon">📞</span> 24/7 travel support on trip</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--brand-pale);border-radius:var(--radius-lg);padding:20px 22px;margin-top:16px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;color:var(--text-dark);margin-bottom:10px">🎯 This package includes</div>
+        <div style="font-size:13px;color:var(--text-mid);display:flex;flex-direction:column;gap:6px" id="sidebar-highlights"></div>
+      </div>
+    </div>
+
+  </div><!-- /pkg-detail-wrap -->
+</div>
+
+<!-- More from this destination -->
+<section class="section-pad" style="background:var(--bg-soft)">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-label">More Packages</span>
+      <h2 class="section-title" id="more-title">More Packages</h2>
+    </div>
+    <div class="packages-grid" id="more-packages" data-page="more" style="margin-top:32px"></div>
+  </div>
+</section>
+
+<a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="whatsapp-float" title="Chat on WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<script src="js/main.js"></script>
+</body>
+</html>

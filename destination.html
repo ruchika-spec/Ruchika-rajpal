@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Destination — Holidays by Vismora</title>
+  <meta name="description" id="page-desc" content="Holiday packages and travel guide.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Destination-specific styles */
+    .dest-page-hero { position:relative; height: 500px; overflow: hidden; }
+    .dest-page-hero img { width:100%; height:100%; object-fit:cover; }
+    .dest-page-hero-overlay { position:absolute; inset:0;
+      background:linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,.6) 100%); }
+    .dest-page-hero-content { position:absolute; bottom:0; left:0; right:0; padding:40px 0; }
+    .dest-page-hero-content .container { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+    .dest-hero-text h1 { font-size: clamp(36px,5vw,60px); font-weight:900; color:#fff; line-height:1.05; }
+    .dest-hero-text .dest-tagline { font-size:18px; color:rgba(255,255,255,.85); margin-top:8px; }
+    .dest-hero-btns { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .dest-hero-btns-right { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+
+    /* Info bar */
+    .dest-info-bar { background:#fff; border-bottom:1px solid var(--border); }
+    .dest-info-inner { display:grid; grid-template-columns:repeat(4,1fr); }
+    .dest-info-item { padding:18px 20px; border-right:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    .dest-info-item:last-child { border-right:none; }
+    .dest-info-icon { font-size:22px; flex-shrink:0; }
+    .dest-info-label { font-size:11px; font-weight:700; color:var(--text-mid); text-transform:uppercase; letter-spacing:.5px; }
+    .dest-info-val { font-size:14px; font-weight:700; color:var(--text-dark); margin-top:1px; }
+
+    /* Why visit */
+    .why-dest-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:40px; }
+    .why-dest-card { background:#fff; border-radius:var(--radius-lg); padding:28px 24px;
+      border:1px solid var(--border); box-shadow:var(--shadow-sm); }
+    .why-dest-icon { font-size:36px; margin-bottom:12px; }
+    .why-dest-title { font-size:17px; font-weight:800; color:var(--text-dark); margin-bottom:8px; }
+    .why-dest-desc { font-size:14px; color:var(--text-mid); line-height:1.6; }
+
+    /* Package cards for destination */
+    .dest-pkg-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:12px; }
+    .dest-pkg-count { font-size:15px; color:var(--text-mid); }
+    .dest-pkg-count strong { color:var(--brand-mid); }
+
+    /* Quick fact strip */
+    .quick-facts { background:var(--brand-pale); border-radius:var(--radius-lg); padding:24px 28px; margin-bottom:40px; display:flex; gap:32px; flex-wrap:wrap; }
+    .qf-item { display:flex; align-items:center; gap:10px; }
+    .qf-icon { font-size:20px; }
+    .qf-text { }
+    .qf-label { font-size:11px; font-weight:700; color:var(--brand-mid); text-transform:uppercase; letter-spacing:.5px; }
+    .qf-val { font-size:14px; font-weight:700; color:var(--text-dark); }
+
+    @media(max-width:1024px) {
+      .dest-page-hero { height:380px; }
+      .dest-info-inner { grid-template-columns:repeat(2,1fr); }
+      .dest-info-item:nth-child(2) { border-right:none; }
+      .why-dest-grid { grid-template-columns:1fr 1fr; }
+    }
+    @media(max-width:768px) {
+      .dest-page-hero { height:280px; }
+      .dest-page-hero-content { padding:20px 0; }
+      .dest-hero-text h1 { font-size:30px; }
+      .dest-hero-text .dest-tagline { font-size:14px; }
+      .dest-hero-btns { margin-top:12px; }
+      .dest-info-inner { grid-template-columns:1fr 1fr; }
+      .why-dest-grid { grid-template-columns:1fr; }
+      .quick-facts { gap:16px; }
+      .dest-hero-btns-right { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-text">
+          <span class="brand-main">Holidays</span>
+          <span class="brand-sub">by V&nbsp;✦&nbsp;ismora</span>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="packages.html">Packages</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="index.html#enquiry">Contact</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="btn btn-sm wa-link" style="background:transparent;border:2px solid #25D366;color:#25D366;gap:6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
+        </a>
+        <a href="index.html#enquiry" class="btn btn-primary btn-sm">Plan My Holiday</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="dest-page-hero">
+  <img id="dest-hero-img" src="" alt="Destination">
+  <div class="dest-page-hero-overlay"></div>
+  <div class="dest-page-hero-content">
+    <div class="container">
+      <div class="dest-hero-text">
+        <div class="breadcrumb" style="margin-bottom:10px">
+          <a href="index.html" style="color:rgba(255,255,255,.7)">Home</a>
+          <span class="sep" style="color:rgba(255,255,255,.5)">›</span>
+          <a href="packages.html" style="color:rgba(255,255,255,.7)">Destinations</a>
+          <span class="sep" style="color:rgba(255,255,255,.5)">›</span>
+          <span style="color:#fff" id="dest-breadcrumb">...</span>
+        </div>
+        <h1 id="dest-hero-title">Loading...</h1>
+        <div class="dest-tagline" id="dest-hero-tagline"></div>
+        <div class="dest-hero-btns">
+          <a href="#packages" class="btn btn-accent btn-lg">See All Packages ↓</a>
+          <a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="btn btn-lg" style="background:rgba(255,255,255,.15);color:#fff;border:2px solid rgba(255,255,255,.4);">💬 Ask Us Anything</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Info Bar -->
+<div class="dest-info-bar">
+  <div class="container">
+    <div class="dest-info-inner" id="dest-info-inner"></div>
+  </div>
+</div>
+
+<!-- Why Visit -->
+<section class="section-pad">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-label">Why Visit</span>
+      <h2 class="section-title">Why <span class="title-accent" id="dest-why-name">This Destination</span>?</h2>
+    </div>
+    <div class="why-dest-grid" id="why-dest-grid"></div>
+  </div>
+</section>
+
+<!-- Quick Facts -->
+<section style="background:var(--bg-soft);padding:40px 0">
+  <div class="container">
+    <div class="quick-facts" id="quick-facts"></div>
+  </div>
+</section>
+
+<!-- Packages for this destination -->
+<section class="section-pad" id="packages">
+  <div class="container">
+    <div class="dest-pkg-header">
+      <div>
+        <span class="section-label">Holiday Packages</span>
+        <h2 class="section-title" id="dest-pkg-title">All Packages</h2>
+      </div>
+      <div class="dest-pkg-count">Showing <strong id="dest-pkg-count">0</strong> packages</div>
+    </div>
+    <div class="packages-grid" id="packages-grid" data-page="destination"></div>
+    <div style="text-align:center;margin-top:48px">
+      <p style="font-size:16px;color:var(--text-mid);margin-bottom:20px">
+        Don't see what you're looking for? We create fully custom itineraries.
+      </p>
+      <a href="index.html#enquiry" class="btn btn-primary btn-lg">Get a Custom Quote →</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Strip -->
+<section class="cta-strip">
+  <div class="container">
+    <div class="cta-strip-inner">
+      <div>
+        <div class="cta-strip-title">Ready to Book Your <span id="dest-cta-name">Trip</span>?</div>
+        <div class="cta-strip-sub">Tell us your dates and budget — we'll plan everything in 24 hours.</div>
+      </div>
+      <div class="cta-strip-btns">
+        <a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="btn btn-accent btn-lg">💬 WhatsApp Us Now</a>
+        <a href="index.html#enquiry" class="btn btn-lg" style="background:rgba(255,255,255,.15);color:#fff;border:2px solid rgba(255,255,255,.3);">📋 Send Enquiry</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" style="margin-bottom:16px;">
+          <div class="nav-logo-text">
+            <span class="brand-main">Holidays</span>
+            <span class="brand-sub">by V&nbsp;✦&nbsp;ismora</span>
+          </div>
+        </a>
+        <p class="footer-desc">Premium assisted international holiday planning for Indian travellers.</p>
+        <div class="footer-socials">
+          <a href="https://www.instagram.com/holidaysbyvismora" class="social-btn" target="_blank" rel="noopener">📸</a>
+          <a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="social-btn wa-link">💬</a>
+          <a href="#" class="social-btn">⭐</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Destinations</h4>
+        <ul>
+          <li><a href="destination.html?dest=Bali">🇮🇩 Bali</a></li>
+          <li><a href="destination.html?dest=Thailand">🇹🇭 Thailand</a></li>
+          <li><a href="destination.html?dest=Dubai">🇦🇪 Dubai</a></li>
+          <li><a href="destination.html?dest=Maldives">🇲🇻 Maldives</a></li>
+          <li><a href="destination.html?dest=Europe">🌍 Europe</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="blog.html">Travel Blog</a></li>
+          <li><a href="index.html#enquiry">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="wa-link">💬 WhatsApp Us</a></li>
+          <li><a href="tel:+919310313652" class="call-link">📞 +91 93103 13652</a></li>
+          <li><a href="mailto:holidays@vismora.com">📧 holidays@vismora.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 Holidays by Vismora · All rights reserved</div>
+      <div>Part of <a href="https://vismora.com" target="_blank">Vismora.com</a></div>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/919310313652" target="_blank" rel="noopener noreferrer" class="whatsapp-float wa-link" title="Chat on WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<script src="js/main.js"></script>
+</body>
+</html>

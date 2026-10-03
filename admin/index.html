@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HBV Admin — Holidays by Vismora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --brand:#2A0A7A;--brand-mid:#3D1AB0;--brand-light:#6B3FE0;--brand-pale:#EDE8FF;
+      --accent:#F5A623;--success:#22C55E;--warning:#F59E0B;--danger:#EF4444;--info:#3B82F6;
+      --white:#fff;--g50:#F9FAFB;--g100:#F3F4F6;--g200:#E5E7EB;--g300:#D1D5DB;
+      --g400:#9CA3AF;--g500:#6B7280;--g700:#374151;--g900:#111827;
+      --sidebar:256px;--radius:12px;--rsm:8px;
+      --shadow:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
+    }
+    body{font-family:Inter,sans-serif;background:var(--g50);color:var(--g900);line-height:1.5;font-size:14px;}
+    a{text-decoration:none;color:inherit}
+    img{max-width:100%}
+
+    /* ===== LOGIN ===== */
+    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;
+      background:linear-gradient(135deg,var(--brand) 0%,var(--brand-light) 100%);}
+    .lc{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .lc-logo{text-align:center;margin-bottom:32px}
+    .lc-logo .lm{font-size:26px;font-weight:900;color:var(--accent);font-style:italic;display:block}
+    .lc-logo .ls{font-size:11px;color:var(--g400);letter-spacing:.5px}
+    .lc-logo .lb{background:var(--brand-pale);color:var(--brand-mid);font-size:10px;font-weight:700;
+      padding:3px 10px;border-radius:100px;display:inline-block;margin-top:8px;letter-spacing:.5px}
+    .lc-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
+    .lc-sub{font-size:13px;color:var(--g500);text-align:center;margin-bottom:28px}
+    .lc-err{color:var(--danger);font-size:13px;text-align:center;margin-top:8px;display:none}
+
+    /* ===== ADMIN PANEL ===== */
+    #admin-panel{display:none}
+    .al{display:flex;min-height:100vh}
+
+    /* ===== SIDEBAR ===== */
+    .sb{width:var(--sidebar);background:var(--brand);display:flex;flex-direction:column;
+      position:fixed;top:0;left:0;height:100vh;z-index:100}
+    .sb-logo{padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sb-logo .lm{font-size:20px;font-weight:900;color:var(--accent);font-style:italic;display:block;line-height:1}
+    .sb-logo .ls{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.5px}
+    .sb-logo .lb{background:rgba(255,255,255,.15);color:#fff;font-size:10px;font-weight:700;
+      padding:2px 8px;border-radius:100px;display:inline-block;margin-top:6px;letter-spacing:.5px}
+    .sb-nav{padding:14px 10px;flex:1;overflow-y:auto}
+    .nl{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1px;
+      text-transform:uppercase;padding:10px 10px 4px;margin-top:4px}
+    .ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
+      color:rgba(255,255,255,.72);font-size:13px;font-weight:500;cursor:pointer;
+      transition:all .15s;margin-bottom:2px;user-select:none}
+    .ni:hover{background:rgba(255,255,255,.1);color:#fff}
+    .ni.active{background:rgba(255,255,255,.16);color:#fff;font-weight:600}
+    .ni .nic{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+    .ni .nb{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;
+      padding:1px 7px;border-radius:100px}
+    .sb-foot{padding:14px;border-top:1px solid rgba(255,255,255,.1)}
+    .sb-foot-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;
+      color:rgba(255,255,255,.55);font-size:12px;cursor:pointer}
+    .sb-foot-item:hover{background:rgba(255,255,255,.1);color:#fff}
+
+    /* ===== MAIN ===== */
+    .mc{margin-left:var(--sidebar);flex:1;min-width:0}
+    .tb{background:#fff;border-bottom:1px solid var(--g200);padding:0 28px;height:58px;
+      display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:50}
+    .tb-title{font-size:16px;font-weight:700}
+    .tb-acts{display:flex;align-items:center;gap:10px}
+    .btn{padding:9px 18px;border-radius:var(--rsm);font-size:13px;font-weight:600;
+      font-family:Inter,sans-serif;cursor:pointer;border:none;transition:all .15s;
+      display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:var(--brand-mid);color:#fff}
+    .btn-primary:hover{background:var(--brand)}
+    .btn-success{background:var(--success);color:#fff}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-outline{background:#fff;color:var(--g700);border:1.5px solid var(--g200)}
+    .btn-outline:hover{border-color:var(--brand-light);color:var(--brand-mid)}
+    .btn-sm{padding:6px 12px;font-size:12px}
+    .btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+    .pc{padding:24px 28px}
+
+    /* ===== STAT CARDS ===== */
+    .stats-g{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .sc{background:#fff;border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow)}
+    .sc-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .sc-lbl{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px}
+    .sc-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;
+      justify-content:center;font-size:17px}
+    .sc-num{font-size:26px;font-weight:800;color:var(--g900);line-height:1}
+    .sc-trend{font-size:12px;color:var(--success);margin-top:4px}
+
+    /* ===== TABLE CARD ===== */
+    .tc{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:24px}
+    .tc-hd{padding:14px 18px;border-bottom:1px solid var(--g100);display:flex;align-items:center;
+      justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .tc-title{font-size:14px;font-weight:700}
+    .ts-wrap{position:relative}
+    .ts-input{padding:7px 10px 7px 30px;border:1.5px solid var(--g200);border-radius:var(--rsm);
+      font-size:13px;font-family:Inter,sans-serif;width:210px;outline:none;background:#fff}
+    .ts-input:focus{border-color:var(--brand-light)}
+    .ts-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--g400);font-size:13px;pointer-events:none}
+    table{width:100%;border-collapse:collapse}
+    th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--g500);
+      text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--g100);background:var(--g50)}
+    td{padding:11px 14px;font-size:13px;color:var(--g700);border-bottom:1px solid var(--g100);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:var(--g50)}
+    .pkg-thumb{width:44px;height:33px;border-radius:5px;object-fit:cover}
+    .pkg-thumb-ph{width:44px;height:33px;border-radius:5px;background:var(--brand-pale);
+      display:flex;align-items:center;justify-content:center;font-size:16px}
+    .badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700}
+    .ba{background:#D1FAE5;color:#065F46}.bd{background:var(--g100);color:var(--g500)}
+    .bh{background:#FEE2E2;color:#991B1B}.bnew{background:#DBEAFE;color:#1E40AF}
+    .bcontacted{background:#FEF3C7;color:#92400E}.bbooked{background:#D1FAE5;color:#065F46}
+    .bclosed{background:var(--g100);color:var(--g500)}
+    .acts{display:flex;gap:5px}
+
+    /* ===== MODAL ===== */
+    .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;
+      align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+    .mo.open{display:flex}
+    .md{background:#fff;border-radius:16px;width:100%;max-width:860px;
+      box-shadow:0 20px 60px rgba(0,0,0,.22);margin:auto}
+    .md-hd{padding:18px 24px;border-bottom:1px solid var(--g100);
+      display:flex;align-items:center;justify-content:space-between}
+    .md-title{font-size:16px;font-weight:700}
+    .md-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--g400);
+      padding:2px 6px;border-radius:6px;line-height:1}
+    .md-close:hover{background:var(--g100);color:var(--g700)}
+    .md-body{padding:22px 24px;max-height:calc(100vh - 140px);overflow-y:auto}
+    .md-ft{padding:14px 24px;border-top:1px solid var(--g100);
+      display:flex;align-items:center;justify-content:flex-end;gap:10px}
+
+    /* ===== FORM ===== */
+    .fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .fr3{grid-template-columns:1fr 1fr 1fr}
+    .fr1{grid-template-columns:1fr}
+    .fg{margin-bottom:14px}
+    .fg label{display:block;font-size:12px;font-weight:600;color:var(--g700);margin-bottom:5px}
+    .fg input,.fg select,.fg textarea{width:100%;padding:9px 13px;border:1.5px solid var(--g200);
+      border-radius:var(--rsm);font-size:13px;font-family:Inter,sans-serif;color:var(--g900);
+      outline:none;transition:border-color .2s;background:#fff}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--brand-light);
+      box-shadow:0 0 0 3px rgba(107,63,224,.1)}
+    .fg textarea{resize:vertical;min-height:90px}
+    .fhint{font-size:11px;color:var(--g400);margin-top:3px}
+    .fs{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--g100)}
+    .fs:last-child{border-bottom:none;margin-bottom:0}
+    .fs-title{font-size:11px;font-weight:700;color:var(--brand-mid);text-transform:uppercase;
+      letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .fs-title::before{content:'';display:inline-block;width:3px;height:13px;
+      background:var(--brand-mid);border-radius:2px}
+
+    /* Pricing highlight */
+    .price-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+    .price-box{background:var(--brand-pale);border-radius:var(--rsm);padding:14px;text-align:center}
+    .price-box.highlight{background:linear-gradient(135deg,var(--brand-mid),var(--brand-light));color:#fff}
+    .pb-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;
+      color:var(--brand-mid);opacity:.8}
+    .price-box.highlight .pb-lbl{color:rgba(255,255,255,.8);opacity:1}
+    .pb-val{font-size:22px;font-weight:800;color:var(--brand);line-height:1}
+    .price-box.highlight .pb-val{color:#fff}
+    .pb-sub{font-size:11px;color:var(--g500);margin-top:2px}
+    .price-box.highlight .pb-sub{color:rgba(255,255,255,.7)}
+
+    /* Toggle */
+    .tg-wrap{display:flex;align-items:center;gap:10px}
+    .tg{position:relative;display:inline-block;width:42px;height:23px}
+    .tg input{opacity:0;width:0;height:0}
+    .tg-sl{position:absolute;cursor:pointer;inset:0;background:var(--g200);border-radius:100px;transition:.3s}
+    .tg-sl::before{content:'';position:absolute;width:17px;height:17px;left:3px;bottom:3px;
+      background:#fff;border-radius:50%;transition:.3s}
+    .tg input:checked+.tg-sl{background:var(--brand-mid)}
+    .tg input:checked+.tg-sl::before{transform:translateX(19px)}
+    .tg-lbl{font-size:13px;font-weight:600;color:var(--g700)}
+
+    /* Image preview */
+    .img-wrap{border:2px dashed var(--g200);border-radius:var(--rsm);overflow:hidden;
+      background:var(--g50)}
+    .img-preview{width:100%;height:110px;object-fit:cover;display:none}
+    .img-preview.show{display:block}
+    .img-ph{display:flex;align-items:center;justify-content:center;height:70px;
+      color:var(--g400);font-size:13px}
+
+    /* Gallery row */
+    .gallery-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+    .gallery-item{position:relative}
+    .gallery-item img{width:100%;height:70px;object-fit:cover;border-radius:6px;display:none}
+    .gallery-item img.show{display:block}
+    .gallery-item .gi-ph{height:70px;background:var(--g100);border-radius:6px;display:flex;
+      align-items:center;justify-content:center;color:var(--g400);font-size:18px}
+    .gallery-item input{width:100%;padding:5px 8px;border:1.5px solid var(--g200);border-radius:5px;
+      font-size:11px;font-family:Inter,sans-serif;margin-top:4px;outline:none}
+    .gallery-item input:focus{border-color:var(--brand-light)}
+
+    /* Itinerary builder */
+    .iti-day{background:var(--g50);border-radius:var(--rsm);padding:14px;
+      margin-bottom:10px;border:1px solid var(--g100)}
+    .iti-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .day-badge{background:var(--brand-mid);color:#fff;font-size:10px;font-weight:700;
+      padding:2px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+    .iti-hd input{flex:1;padding:7px 11px;border:1.5px solid var(--g200);border-radius:6px;
+      font-size:12px;font-family:Inter,sans-serif;outline:none}
+    .iti-hd input:focus{border-color:var(--brand-light)}
+    .iti-body textarea{width:100%;min-height:68px;padding:9px 11px;border:1.5px solid var(--g200);
+      border-radius:6px;font-size:12px;font-family:Inter,sans-serif;resize:vertical;outline:none}
+    .iti-body textarea:focus{border-color:var(--brand-light)}
+
+    /* Bullet lists */
+    .bl{display:flex;flex-direction:column;gap:7px}
+    .bi{display:flex;gap:7px;align-items:flex-start}
+    .bi input{flex:1;padding:7px 11px;border:1.5px solid var(--g200);border-radius:6px;
+      font-size:12px;font-family:Inter,sans-serif;outline:none}
+    .bi input:focus{border-color:var(--brand-light)}
+    .bi-rm{background:#FEE2E2;color:var(--danger);border:none;border-radius:6px;
+      padding:7px 10px;cursor:pointer;font-size:13px;flex-shrink:0}
+    .bi-rm:hover{background:var(--danger);color:#fff}
+    .btn-add-bl{background:var(--brand-pale);color:var(--brand-mid);border:none;border-radius:6px;
+      padding:7px 13px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;
+      cursor:pointer;margin-top:6px}
+    .btn-add-bl:hover{background:var(--brand-light);color:#fff}
+
+    /* Tabs */
+    .mt{display:flex;gap:1px;border-bottom:1px solid var(--g100);margin-bottom:18px;overflow-x:auto}
+    .mt-tab{padding:8px 14px;font-size:12px;font-weight:600;color:var(--g500);cursor:pointer;
+      border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+    .mt-tab:hover{color:var(--brand-mid)}
+    .mt-tab.active{color:var(--brand-mid);border-bottom-color:var(--brand-mid)}
+    .mt-panel{display:none}
+    .mt-panel.active{display:block}
+
+    /* Modal tabs (secondary tabs for enquiry detail) */
+    .status-sel{padding:7px 12px;border:1.5px solid var(--g200);border-radius:var(--rsm);
+      font-size:12px;font-family:Inter,sans-serif;outline:none;cursor:pointer}
+    .status-sel:focus{border-color:var(--brand-light)}
+
+    /* ===== TOAST ===== */
+    .toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;
+      display:flex;flex-direction:column;gap:8px}
+    .toast{background:var(--g900);color:#fff;padding:10px 18px;border-radius:10px;
+      font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);
+      animation:toastIn .3s ease}
+    .toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+    @keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+    /* ===== EMPTY STATE ===== */
+    .es{text-align:center;padding:56px 20px;color:var(--g400)}
+    .es-ico{font-size:44px;margin-bottom:12px}
+    .es-title{font-size:15px;font-weight:600;color:var(--g600);margin-bottom:6px}
+    .es-sub{font-size:13px}
+
+    /* Alert banner */
+    .alert{padding:12px 18px;border-radius:var(--rsm);font-size:13px;margin-bottom:20px;
+      display:flex;align-items:center;gap:10px}
+    .alert-info{background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE}
+    .alert-warn{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
+
+    /* Page sections */
+    .section-page{display:none}
+    .section-page.active{display:block}
+
+    /* Enquiry detail */
+    .eq-card{background:var(--g50);border-radius:var(--rsm);padding:14px;margin-bottom:14px}
+    .eq-row{display:flex;gap:8px;margin-bottom:6px;font-size:13px}
+    .eq-lbl{font-weight:700;color:var(--g700);min-width:110px;flex-shrink:0}
+
+    /* ===== RESPONSIVE ===== */
+    @media(max-width:900px){
+      .stats-g{grid-template-columns:repeat(2,1fr)}
+      .price-grid{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:640px){
+      .sb{transform:translateX(-100%)}
+      .mc{margin-left:0}
+      .fr{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="lc">
+    <div class="lc-logo">
+      <span class="lm">Holidays</span>
+      <span class="ls">by V ✦ ismora</span>
+      <span class="lb">ADMIN PANEL</span>
+    </div>
+    <div class="lc-title">Team Login</div>
+    <div class="lc-sub">Enter your password to access the dashboard</div>
+    <div class="fg">
+      <label for="pw-input">Password</label>
+      <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%;justify-content:center;padding:13px;">Sign In →</button>
+    <div class="lc-err" id="login-err">Incorrect password. Please try again.</div>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div id="admin-panel">
+  <div class="al">
+
+    <!-- Sidebar -->
+    <div class="sb">
+      <div class="sb-logo">
+        <span class="lm">Holidays</span>
+        <span class="ls">by V ✦ ismora</span>
+        <span class="lb">ADMIN</span>
+      </div>
+      <nav class="sb-nav">
+        <div class="nl">Main</div>
+        <div class="ni active" data-section="dashboard">
+          <span class="nic">📊</span> Dashboard
+        </div>
+        <div class="ni" data-section="packages">
+          <span class="nic">🌍</span> Packages
+          <span class="nb" id="pkg-count-badge">0</span>
+        </div>
+        <div class="ni" data-section="enquiries">
+          <span class="nic">📋</span> Enquiries
+          <span class="nb" id="enq-count-badge">0</span>
+        </div>
+        <div class="nl">Settings</div>
+        <div class="ni" data-section="settings">
+          <span class="nic">⚙️</span> Settings
+        </div>
+      </nav>
+      <div class="sb-foot">
+        <a href="../index.html" target="_blank" class="sb-foot-item">
+          <span>🌐</span> View Live Site
+        </a>
+        <div class="sb-foot-item" id="logout-btn">
+          <span>🚪</span> Logout
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="mc">
+      <div class="tb">
+        <div class="tb-title" id="tb-title">Dashboard</div>
+        <div class="tb-acts" id="tb-acts"></div>
+      </div>
+
+      <div class="pc">
+
+        <!-- ===== DASHBOARD ===== -->
+        <div class="section-page active" id="section-dashboard">
+          <div id="supabase-banner" class="alert alert-info" style="display:none">
+            ℹ️ <strong>Supabase not connected.</strong> Packages are stored locally in this browser.
+            To share with your team, add your <code>SUPABASE_ANON_KEY</code> in Settings.
+          </div>
+          <div class="stats-g" id="dash-stats"></div>
+          <div class="tc">
+            <div class="tc-hd">
+              <div class="tc-title">Recent Enquiries</div>
+              <a href="#" class="btn btn-outline btn-sm" id="dash-view-all-enq">View All →</a>
+            </div>
+            <div id="dash-enq-table"></div>
+          </div>
+          <div class="tc">
+            <div class="tc-hd">
+              <div class="tc-title">Active Packages</div>
+              <a href="#" class="btn btn-outline btn-sm" id="dash-view-all-pkg">View All →</a>
+            </div>
+            <div id="dash-pkg-table"></div>
+          </div>
+        </div>
+
+        <!-- ===== PACKAGES ===== -->
+        <div class="section-page" id="section-packages">
+          <div class="tc">
+            <div class="tc-hd">
+              <div class="tc-title">All Packages</div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <div class="ts-wrap">
+                  <span class="ts-ico">🔍</span>
+                  <input type="text" class="ts-input" id="pkg-search" placeholder="Search packages...">
+                </div>
+                <button class="btn btn-primary btn-sm" id="add-pkg-btn">+ Add Package</button>
+              </div>
+            </div>
+            <div id="pkg-table"></div>
+          </div>
+        </div>
+
+        <!-- ===== ENQUIRIES ===== -->
+        <div class="section-page" id="section-enquiries">
+          <div class="tc">
+            <div class="tc-hd">
+              <div class="tc-title">All Enquiries</div>
+              <div class="ts-wrap">
+                <span class="ts-ico">🔍</span>
+                <input type="text" class="ts-input" id="enq-search" placeholder="Search enquiries...">
+              </div>
+            </div>
+            <div id="enq-table"></div>
+          </div>
+        </div>
+
+        <!-- ===== SETTINGS ===== -->
+        <div class="section-page" id="section-settings">
+          <div class="tc">
+            <div class="tc-hd">
+              <div class="tc-title">Supabase Connection</div>
+            </div>
+            <div style="padding:24px">
+              <div class="alert alert-info" style="margin-bottom:20px">
+                Connect Supabase so your entire team can share packages and enquiries in real-time.
+                Get your anon key from <strong>Supabase Dashboard → Settings → API</strong>.
+              </div>
+              <div class="fr">
+                <div class="fg">
+                  <label>Supabase URL</label>
+                  <input type="text" id="sb-url" placeholder="https://xxx.supabase.co" value="https://iqpilmnrdclgdosrhwso.supabase.co">
+                </div>
+                <div class="fg">
+                  <label>Supabase Anon Key</label>
+                  <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIs...">
+                </div>
+              </div>
+              <button class="btn btn-primary" id="save-sb-btn">Save & Test Connection</button>
+              <div id="sb-status" style="margin-top:12px;font-size:13px"></div>
+            </div>
+          </div>
+          <div class="tc" style="margin-top:16px">
+            <div class="tc-hd"><div class="tc-title">Data Management</div></div>
+            <div style="padding:24px;display:flex;gap:12px;flex-wrap:wrap">
+              <button class="btn btn-outline" id="export-btn">📤 Export All Data (JSON)</button>
+              <button class="btn btn-outline btn-danger-outline" id="clear-btn" style="color:var(--danger);border-color:var(--danger)">🗑️ Clear All Local Data</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /pc -->
+    </div><!-- /mc -->
+  </div><!-- /al -->
+</div><!-- /admin-panel -->
+
+<!-- ===== PACKAGE MODAL ===== -->
+<div class="mo" id="pkg-modal">
+  <div class="md">
+    <div class="md-hd">
+      <div class="md-title" id="pkg-modal-title">Add New Package</div>
+      <button class="md-close" id="pkg-modal-close">✕</button>
+    </div>
+    <div class="md-body">
+      <div class="mt" id="pkg-tabs">
+        <div class="mt-tab active" data-tab="basic">Basic Info</div>
+        <div class="mt-tab" data-tab="pricing">Pricing</div>
+        <div class="mt-tab" data-tab="media">Images</div>
+        <div class="mt-tab" data-tab="overview">Overview</div>
+        <div class="mt-tab" data-tab="itinerary">Itinerary</div>
+        <div class="mt-tab" data-tab="inclusions">Inclusions</div>
+        <div class="mt-tab" data-tab="terms">Terms</div>
+      </div>
+
+      <!-- Tab: Basic Info -->
+      <div class="mt-panel active" id="tab-basic">
+        <div class="fs">
+          <div class="fs-title">Package Details</div>
+          <div class="fr">
+            <div class="fg"><label>Package Name *</label>
+              <input type="text" id="pkg-name" placeholder="e.g. Bali Bliss 6D/5N">
+            </div>
+            <div class="fg"><label>Destination *</label>
+              <select id="pkg-dest">
+                <option value="">Select Destination</option>
+                <option>Bali</option><option>Maldives</option><option>Dubai</option>
+                <option>Singapore</option><option>Thailand</option><option>Vietnam</option>
+                <option>Mauritius</option><option>Malaysia</option><option>Hong Kong</option>
+                <option>Europe</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr3 fr">
+            <div class="fg"><label>Days</label>
+              <input type="number" id="pkg-days" placeholder="e.g. 6" min="1" max="30">
+            </div>
+            <div class="fg"><label>Nights</label>
+              <input type="number" id="pkg-nights" placeholder="e.g. 5" min="0" max="30">
+            </div>
+            <div class="fg"><label>Badge Text</label>
+              <input type="text" id="pkg-badge" placeholder="e.g. Bestseller">
+            </div>
+          </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div class="tg-wrap">
+              <label class="tg"><input type="checkbox" id="pkg-hot"><span class="tg-sl"></span></label>
+              <span class="tg-lbl">🔥 Mark as Hot Deal</span>
+            </div>
+            <div class="tg-wrap">
+              <label class="tg"><input type="checkbox" id="pkg-active" checked><span class="tg-sl"></span></label>
+              <span class="tg-lbl">✅ Active (visible on site)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Pricing -->
+      <div class="mt-panel" id="tab-pricing">
+        <div class="fs">
+          <div class="fs-title">Price Configuration</div>
+          <div class="price-grid">
+            <div class="fg"><label>Original Price / MRP (₹)</label>
+              <input type="number" id="pkg-orig-price" placeholder="e.g. 75000" min="0" id="pkg-orig-price">
+              <div class="fhint">The full/market rate price</div>
+            </div>
+            <div class="fg"><label>Selling Price (₹) *</label>
+              <input type="number" id="pkg-sell-price" placeholder="e.g. 55000" min="0">
+              <div class="fhint">What the customer pays</div>
+            </div>
+            <div class="fg"><label>Per Person or Total?</label>
+              <select id="pkg-price-type">
+                <option value="person">Per Person</option>
+                <option value="total">Total Package</option>
+              </select>
+            </div>
+          </div>
+          <div class="price-grid" id="price-preview-boxes">
+            <div class="price-box">
+              <div class="pb-lbl">Original Price</div>
+              <div class="pb-val" id="pp-orig">₹—</div>
+              <div class="pb-sub">MRP / Crossed out</div>
+            </div>
+            <div class="price-box highlight">
+              <div class="pb-lbl">Selling Price</div>
+              <div class="pb-val" id="pp-sell">₹—</div>
+              <div class="pb-sub">Customer pays this</div>
+            </div>
+            <div class="price-box" style="background:#D1FAE5">
+              <div class="pb-lbl" style="color:#065F46">Customer Saves</div>
+              <div class="pb-val" id="pp-save" style="color:#065F46">—</div>
+              <div class="pb-sub" id="pp-pct" style="color:#047857">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Media -->
+      <div class="mt-panel" id="tab-media">
+        <div class="fs">
+          <div class="fs-title">Hero / Banner Image</div>
+          <div class="fr1 fr">
+            <div class="fg">
+              <label>Hero Image URL <span style="color:var(--g400)">(wide banner, 1400×530px recommended)</span></label>
+              <input type="text" id="pkg-hero-img" placeholder="https://images.unsplash.com/...?w=1400&q=80">
+            </div>
+          </div>
+          <div class="img-wrap"><img id="hero-preview" class="img-preview" alt="Hero Preview"><div class="img-ph" id="hero-ph">Enter URL above to preview image</div></div>
+        </div>
+        <div class="fs">
+          <div class="fs-title">Card / Thumbnail Image</div>
+          <div class="fg">
+            <label>Card Image URL <span style="color:var(--g400)">(4:3 ratio, 600×450px recommended)</span></label>
+            <input type="text" id="pkg-card-img" placeholder="https://images.unsplash.com/...?w=600&q=80">
+          </div>
+          <div class="img-wrap"><img id="card-preview" class="img-preview" alt="Card Preview"><div class="img-ph" id="card-ph">Enter URL above to preview image</div></div>
+        </div>
+        <div class="fs">
+          <div class="fs-title">Gallery Images (up to 6)</div>
+          <div class="gallery-row" id="gallery-grid"></div>
+        </div>
+      </div>
+
+      <!-- Tab: Overview -->
+      <div class="mt-panel" id="tab-overview">
+        <div class="fs">
+          <div class="fs-title">Package Overview</div>
+          <div class="fg"><label>Tagline (1 line)</label>
+            <input type="text" id="pkg-tagline" placeholder="e.g. Temples, rice terraces & world-class beaches">
+          </div>
+          <div class="fg"><label>About / Description</label>
+            <textarea id="pkg-about" rows="5" placeholder="Write a detailed description of this holiday package — what makes it special, the experience, the mood..."></textarea>
+          </div>
+        </div>
+        <div class="fs">
+          <div class="fs-title">Highlights (up to 6 bullet points)</div>
+          <div class="bl" id="highlights-list"></div>
+          <button class="btn-add-bl" id="add-highlight">+ Add Highlight</button>
+        </div>
+      </div>
+
+      <!-- Tab: Itinerary -->
+      <div class="mt-panel" id="tab-itinerary">
+        <div class="fs">
+          <div class="fs-title">Day-by-Day Itinerary</div>
+          <div class="fhint" style="margin-bottom:14px">Itinerary days are auto-generated from the duration you set in Basic Info. Fill in the title and activities for each day.</div>
+          <div id="itinerary-builder"></div>
+          <button class="btn-add-bl" id="add-iti-day" style="margin-top:4px">+ Add Day</button>
+        </div>
+      </div>
+
+      <!-- Tab: Inclusions -->
+      <div class="mt-panel" id="tab-inclusions">
+        <div class="fs">
+          <div class="fs-title">What's Included ✅</div>
+          <div class="bl" id="inclusions-list"></div>
+          <button class="btn-add-bl" id="add-inclusion">+ Add Inclusion</button>
+        </div>
+        <div class="fs" style="margin-top:20px">
+          <div class="fs-title">What's NOT Included ❌</div>
+          <div class="bl" id="exclusions-list"></div>
+          <button class="btn-add-bl" id="add-exclusion">+ Add Exclusion</button>
+        </div>
+      </div>
+
+      <!-- Tab: Terms -->
+      <div class="mt-panel" id="tab-terms">
+        <div class="fs">
+          <div class="fs-title">Terms & Conditions</div>
+          <div class="fg">
+            <textarea id="pkg-terms" rows="10" placeholder="Enter full terms and conditions for this package. Include cancellation policy, payment terms, visa requirements, etc."></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /md-body -->
+    <div class="md-ft">
+      <button class="btn btn-outline" id="pkg-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="pkg-save-btn">Save Package</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ENQUIRY MODAL ===== -->
+<div class="mo" id="enq-modal">
+  <div class="md" style="max-width:560px">
+    <div class="md-hd">
+      <div class="md-title">Enquiry Details</div>
+      <button class="md-close" id="enq-modal-close">✕</button>
+    </div>
+    <div class="md-body" id="enq-modal-body"></div>
+    <div class="md-ft">
+      <button class="btn btn-outline" id="enq-modal-cancel">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===== CONFIG =====
+const ADMIN_PASSWORD = 'hbv2025';
+const SUPABASE_URL_DEFAULT = 'https://iqpilmnrdclgdosrhwso.supabase.co';
+let SUPABASE_KEY = localStorage.getItem('hbv_sb_key') || '';
+let SUPABASE_URL = localStorage.getItem('hbv_sb_url') || SUPABASE_URL_DEFAULT;
+
+// ===== STATE =====
+let state = {
+  packages: [],
+  enquiries: [],
+  editingPkg: null,
+  currentSection: 'dashboard',
+};
+
+// ===== INIT =====
+function init() {
+  loadData();
+  wireLogin();
+  wireNav();
+  wirePackageModal();
+  wireEnquiryModal();
+  wireSettings();
+  renderDashboard();
+}
+
+// ===== DATA PERSISTENCE =====
+function loadData() {
+  try {
+    state.packages = JSON.parse(localStorage.getItem('hbv_packages') || '[]');
+    state.enquiries = JSON.parse(localStorage.getItem('hbv_enquiries') || '[]');
+    // Seed demo enquiries if empty
+    if (state.enquiries.length === 0) seedDemoEnquiries();
+  } catch(e) {
+    state.packages = [];
+    state.enquiries = [];
+  }
+}
+
+function saveData() {
+  localStorage.setItem('hbv_packages', JSON.stringify(state.packages));
+  localStorage.setItem('hbv_enquiries', JSON.stringify(state.enquiries));
+  updateBadges();
+}
+
+function seedDemoEnquiries() {
+  state.enquiries = [
+    { id: uid(), name: 'Priya Sharma', email: 'priya@example.com', phone: '98765 43210',
+      destination: 'Bali', travelDate: 'Dec 2026', travellers: 2, budget: '₹1–1.5 Lakh',
+      message: 'Looking for a honeymoon package to Bali for December.', status: 'new',
+      notes: '', createdAt: new Date().toISOString() },
+    { id: uid(), name: 'Rahul Mehta', email: 'rahul@example.com', phone: '99887 65432',
+      destination: 'Dubai', travelDate: 'Jan 2027', travellers: 4, budget: '₹2–3 Lakh',
+      message: 'Family trip to Dubai with kids. Prefer child-friendly itinerary.',
+      status: 'contacted', notes: 'Called on Oct 2, shared Dubai family package.', createdAt: new Date(Date.now()-86400000).toISOString() },
+    { id: uid(), name: 'Sunita Kapoor', email: 'sunita@example.com', phone: '97654 32109',
+      destination: 'Europe', travelDate: 'Apr 2027', travellers: 2, budget: '₹3–4 Lakh',
+      message: 'Europe grand tour for 12 days, Paris + Switzerland + Italy.', status: 'booked',
+      notes: 'Booking confirmed. Visa appointment on Oct 15.', createdAt: new Date(Date.now()-2*86400000).toISOString() },
+  ];
+  saveData();
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function updateBadges() {
+  const newEnq = state.enquiries.filter(e => e.status === 'new').length;
+  document.getElementById('enq-count-badge').textContent = newEnq || state.enquiries.length;
+  document.getElementById('pkg-count-badge').textContent = state.packages.length;
+}
+
+// ===== AUTH =====
+function wireLogin() {
+  const loginBtn = document.getElementById('login-btn');
+  const pwInput = document.getElementById('pw-input');
+  loginBtn.addEventListener('click', attemptLogin);
+  pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+}
+
+function attemptLogin() {
+  const pw = document.getElementById('pw-input').value;
+  const err = document.getElementById('login-err');
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    if (!SUPABASE_KEY) document.getElementById('supabase-banner').style.display = 'flex';
+    renderDashboard();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+});
+
+// ===== NAV =====
+function wireNav() {
+  document.querySelectorAll('.ni').forEach(item => {
+    item.addEventListener('click', () => {
+      const section = item.dataset.section;
+      navigateTo(section);
+    });
+  });
+  document.getElementById('dash-view-all-enq').addEventListener('click', e => { e.preventDefault(); navigateTo('enquiries'); });
+  document.getElementById('dash-view-all-pkg').addEventListener('click', e => { e.preventDefault(); navigateTo('packages'); });
+}
+
+function navigateTo(section) {
+  document.querySelectorAll('.ni').forEach(i => i.classList.remove('active'));
+  document.querySelector(`.ni[data-section="${section}"]`).classList.add('active');
+  document.querySelectorAll('.section-page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`section-${section}`).classList.add('active');
+  state.currentSection = section;
+
+  const titles = { dashboard:'Dashboard', packages:'Packages', enquiries:'Enquiries', settings:'Settings' };
+  document.getElementById('tb-title').textContent = titles[section] || section;
+
+  const acts = document.getElementById('tb-acts');
+  acts.innerHTML = '';
+  if (section === 'packages') {
+    const b = document.createElement('button');
+    b.className = 'btn btn-primary btn-sm';
+    b.textContent = '+ Add Package';
+    b.addEventListener('click', openAddPackageModal);
+    acts.appendChild(b);
+  }
+
+  if (section === 'dashboard') renderDashboard();
+  if (section === 'packages') renderPackagesTable();
+  if (section === 'enquiries') renderEnquiriesTable();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const active = state.packages.filter(p => p.status === 'active').length;
+  const newEnq = state.enquiries.filter(e => e.status === 'new').length;
+  const booked = state.enquiries.filter(e => e.status === 'booked').length;
+  const highlights = [
+    { label:'Total Packages', num: state.packages.length, ico:'🌍', bg:'#EDE8FF', trend:'+'+state.packages.length+' total' },
+    { label:'Active Packages', num: active, ico:'✅', bg:'#D1FAE5', trend:active+' live on site' },
+    { label:'New Enquiries', num: newEnq, ico:'📋', bg:'#DBEAFE', trend:'Need follow-up' },
+    { label:'Bookings Confirmed', num: booked, ico:'🎉', bg:'#FEF3C7', trend:'This month' },
+  ];
+  document.getElementById('dash-stats').innerHTML = highlights.map(h => `
+    <div class="sc">
+      <div class="sc-hd">
+        <div class="sc-lbl">${h.label}</div>
+        <div class="sc-ico" style="background:${h.bg}">${h.ico}</div>
+      </div>
+      <div class="sc-num">${h.num}</div>
+      <div class="sc-trend">${h.trend}</div>
+    </div>`).join('');
+
+  // Recent enquiries (last 3)
+  const recent = [...state.enquiries].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
+  document.getElementById('dash-enq-table').innerHTML = renderEnqTableHTML(recent);
+  wireEnqActions(document.getElementById('dash-enq-table'));
+
+  // Active packages (first 5)
+  const pkgs = state.packages.filter(p => p.status === 'active').slice(0,5);
+  document.getElementById('dash-pkg-table').innerHTML = renderPkgTableHTML(pkgs);
+  wirePkgActions(document.getElementById('dash-pkg-table'));
+
+  updateBadges();
+}
+
+// ===== PACKAGES TABLE =====
+function renderPackagesTable(filter='') {
+  let pkgs = state.packages;
+  if (filter) pkgs = pkgs.filter(p =>
+    p.name.toLowerCase().includes(filter) ||
+    p.destination.toLowerCase().includes(filter));
+  document.getElementById('pkg-table').innerHTML = renderPkgTableHTML(pkgs);
+  wirePkgActions(document.getElementById('pkg-table'));
+}
+
+function renderPkgTableHTML(pkgs) {
+  if (!pkgs.length) return `<div class="es"><div class="es-ico">📦</div><div class="es-title">No packages yet</div><div class="es-sub">Click "Add Package" to create your first package</div></div>`;
+  return `<table>
+    <thead><tr>
+      <th></th><th>Package</th><th>Destination</th><th>Duration</th>
+      <th>Selling Price</th><th>Discount</th><th>Status</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${pkgs.map(p => {
+      const disc = p.origPrice && p.sellPrice ? Math.round((1-p.sellPrice/p.origPrice)*100) : 0;
+      const thumb = p.cardImg || p.heroImg;
+      return `<tr>
+        <td>${thumb ? `<img src="${thumb}" class="pkg-thumb" alt="">` : `<div class="pkg-thumb-ph">🌍</div>`}</td>
+        <td><strong>${esc(p.name)}</strong>${p.hot?` <span class="badge bh">🔥 Hot</span>`:''}</td>
+        <td>${esc(p.destination)}</td>
+        <td>${p.days}D/${p.nights}N</td>
+        <td><strong>₹${fmt(p.sellPrice)}</strong>${p.origPrice?`<br><small style="text-decoration:line-through;color:var(--g400)">₹${fmt(p.origPrice)}</small>`:''}</td>
+        <td>${disc>0?`<span class="badge" style="background:#D1FAE5;color:#065F46">${disc}% off</span>`:'—'}</td>
+        <td><span class="badge ${p.status==='active'?'ba':'bd'}">${p.status}</span></td>
+        <td><div class="acts">
+          <button class="btn btn-outline btn-xs" data-action="edit" data-id="${p.id}">✏️ Edit</button>
+          <button class="btn btn-xs" style="background:#FEE2E2;color:var(--danger)" data-action="delete" data-id="${p.id}">🗑️</button>
+        </div></td>
+      </tr>`;}).join('')}
+    </tbody></table>`;
+}
+
+function wirePkgActions(container) {
+  container.querySelectorAll('[data-action="edit"]').forEach(b =>
+    b.addEventListener('click', () => openEditPackageModal(b.dataset.id)));
+  container.querySelectorAll('[data-action="delete"]').forEach(b =>
+    b.addEventListener('click', () => deletePackage(b.dataset.id)));
+}
+
+function deletePackage(id) {
+  if (!confirm('Delete this package? This cannot be undone.')) return;
+  state.packages = state.packages.filter(p => p.id !== id);
+  saveData();
+  toast('Package deleted.', 'success');
+  renderPackagesTable(document.getElementById('pkg-search')?.value || '');
+}
+
+// ===== ENQUIRIES TABLE =====
+function renderEnquiriesTable(filter='') {
+  let enqs = [...state.enquiries].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  if (filter) enqs = enqs.filter(e =>
+    (e.name||'').toLowerCase().includes(filter) ||
+    (e.destination||'').toLowerCase().includes(filter) ||
+    (e.phone||'').includes(filter));
+  document.getElementById('enq-table').innerHTML = renderEnqTableHTML(enqs);
+  wireEnqActions(document.getElementById('enq-table'));
+}
+
+function renderEnqTableHTML(enqs) {
+  if (!enqs.length) return `<div class="es"><div class="es-ico">📋</div><div class="es-title">No enquiries yet</div><div class="es-sub">Enquiries from your website will appear here.</div></div>`;
+  return `<table>
+    <thead><tr>
+      <th>Name</th><th>Destination</th><th>Travel Date</th><th>Phone</th><th>Status</th><th>Date</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${enqs.map(e => `<tr>
+      <td><strong>${esc(e.name)}</strong><br><small style="color:var(--g400)">${esc(e.email||'')}</small></td>
+      <td>${esc(e.destination||'')}</td>
+      <td>${esc(e.travelDate||'—')}</td>
+      <td><a href="tel:${esc(e.phone||'')}" style="color:var(--brand-mid)">${esc(e.phone||'')}</a></td>
+      <td>
+        <select class="status-sel" data-id="${e.id}">
+          <option value="new" ${e.status==='new'?'selected':''}>🔵 New</option>
+          <option value="contacted" ${e.status==='contacted'?'selected':''}>🟡 Contacted</option>
+          <option value="booked" ${e.status==='booked'?'selected':''}>🟢 Booked</option>
+          <option value="closed" ${e.status==='closed'?'selected':''}>⚫ Closed</option>
+        </select>
+      </td>
+      <td style="white-space:nowrap">${fmtDate(e.createdAt)}</td>
+      <td><div class="acts">
+        <button class="btn btn-outline btn-xs" data-action="view-enq" data-id="${e.id}">👁 View</button>
+        <a href="https://wa.me/91${(e.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent('Hi '+e.name+'! This is Holidays by Vismora. We received your enquiry for '+e.destination+'. Happy to help!')}" target="_blank" class="btn btn-xs" style="background:#E7F9EE;color:#15803D">💬</a>
+      </div></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function wireEnqActions(container) {
+  container.querySelectorAll('.status-sel').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const enq = state.enquiries.find(e => e.id === sel.dataset.id);
+      if (enq) { enq.status = sel.value; saveData(); toast('Status updated.', 'success'); }
+    });
+  });
+  container.querySelectorAll('[data-action="view-enq"]').forEach(b =>
+    b.addEventListener('click', () => openEnquiryModal(b.dataset.id)));
+}
+
+// ===== ENQUIRY MODAL =====
+function openEnquiryModal(id) {
+  const e = state.enquiries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('enq-modal-body').innerHTML = `
+    <div class="eq-card">
+      <div class="eq-row"><span class="eq-lbl">Name:</span><span>${esc(e.name)}</span></div>
+      <div class="eq-row"><span class="eq-lbl">Email:</span><a href="mailto:${esc(e.email)}" style="color:var(--brand-mid)">${esc(e.email||'—')}</a></div>
+      <div class="eq-row"><span class="eq-lbl">Phone:</span><a href="tel:${esc(e.phone)}" style="color:var(--brand-mid)">${esc(e.phone||'—')}</a></div>
+      <div class="eq-row"><span class="eq-lbl">Destination:</span><strong>${esc(e.destination||'—')}</strong></div>
+      <div class="eq-row"><span class="eq-lbl">Travel Date:</span>${esc(e.travelDate||'—')}</div>
+      <div class="eq-row"><span class="eq-lbl">Travellers:</span>${esc(String(e.travellers||'—'))}</div>
+      <div class="eq-row"><span class="eq-lbl">Budget:</span>${esc(e.budget||'—')}</div>
+      <div class="eq-row"><span class="eq-lbl">Message:</span></div>
+      <p style="font-size:13px;background:var(--g50);padding:10px;border-radius:6px;margin-bottom:12px">${esc(e.message||'—')}</p>
+    </div>
+    <div class="fg"><label>Internal Notes</label>
+      <textarea id="enq-notes" rows="3" placeholder="Add your notes here...">${esc(e.notes||'')}</textarea>
+    </div>
+    <div class="fg"><label>Status</label>
+      <select id="enq-status-modal">
+        <option value="new" ${e.status==='new'?'selected':''}>🔵 New</option>
+        <option value="contacted" ${e.status==='contacted'?'selected':''}>🟡 Contacted</option>
+        <option value="booked" ${e.status==='booked'?'selected':''}>🟢 Booked</option>
+        <option value="closed" ${e.status==='closed'?'selected':''}>⚫ Closed</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary btn-sm" id="save-enq-notes">Save Notes & Status</button>
+      <a href="https://wa.me/91${(e.phone||'').replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#E7F9EE;color:#15803D">💬 WhatsApp ${esc(e.name)}</a>
+    </div>`;
+  document.getElementById('save-enq-notes').addEventListener('click', () => {
+    const enq = state.enquiries.find(x => x.id === id);
+    if (enq) {
+      enq.notes = document.getElementById('enq-notes').value;
+      enq.status = document.getElementById('enq-status-modal').value;
+      saveData();
+      toast('Enquiry updated!', 'success');
+      document.getElementById('enq-modal').classList.remove('open');
+      if (state.currentSection === 'enquiries') renderEnquiriesTable();
+    }
+  });
+  document.getElementById('enq-modal').classList.add('open');
+}
+
+document.getElementById('enq-modal-close').addEventListener('click', () => document.getElementById('enq-modal').classList.remove('open'));
+document.getElementById('enq-modal-cancel').addEventListener('click', () => document.getElementById('enq-modal').classList.remove('open'));
+
+// ===== PACKAGE MODAL =====
+function wirePackageModal() {
+  document.getElementById('add-pkg-btn').addEventListener('click', openAddPackageModal);
+  document.getElementById('pkg-modal-close').addEventListener('click', closePackageModal);
+  document.getElementById('pkg-modal-cancel').addEventListener('click', closePackageModal);
+  document.getElementById('pkg-save-btn').addEventListener('click', savePackage);
+
+  // Tabs
+  document.getElementById('pkg-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.mt-tab');
+    if (!tab) return;
+    document.querySelectorAll('#pkg-tabs .mt-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mt-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+
+  // Price preview
+  ['pkg-orig-price','pkg-sell-price'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePricePreview);
+  });
+
+  // Image preview
+  document.getElementById('pkg-hero-img').addEventListener('input', e => updateImgPreview(e.target.value, 'hero-preview', 'hero-ph'));
+  document.getElementById('pkg-card-img').addEventListener('input', e => updateImgPreview(e.target.value, 'card-preview', 'card-ph'));
+
+  // Days → itinerary
+  document.getElementById('pkg-days').addEventListener('input', syncItinerary);
+
+  // Bullet list buttons
+  document.getElementById('add-highlight').addEventListener('click', () => addBullet('highlights-list'));
+  document.getElementById('add-inclusion').addEventListener('click', () => addBullet('inclusions-list', '✅ '));
+  document.getElementById('add-exclusion').addEventListener('click', () => addBullet('exclusions-list', '❌ '));
+  document.getElementById('add-iti-day').addEventListener('click', addItineraryDay);
+
+  // Close on backdrop
+  document.getElementById('pkg-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('pkg-modal')) closePackageModal();
+  });
+
+  buildGalleryGrid();
+}
+
+function openAddPackageModal() {
+  state.editingPkg = null;
+  document.getElementById('pkg-modal-title').textContent = 'Add New Package';
+  resetPackageForm();
+  document.getElementById('pkg-modal').classList.add('open');
+  // Switch to first tab
+  document.querySelectorAll('#pkg-tabs .mt-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  document.querySelectorAll('.mt-panel').forEach((p,i) => p.classList.toggle('active', i===0));
+}
+
+function openEditPackageModal(id) {
+  const pkg = state.packages.find(p => p.id === id);
+  if (!pkg) return;
+  state.editingPkg = id;
+  document.getElementById('pkg-modal-title').textContent = 'Edit Package';
+  populatePackageForm(pkg);
+  document.getElementById('pkg-modal').classList.add('open');
+  document.querySelectorAll('#pkg-tabs .mt-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  document.querySelectorAll('.mt-panel').forEach((p,i) => p.classList.toggle('active', i===0));
+}
+
+function closePackageModal() {
+  document.getElementById('pkg-modal').classList.remove('open');
+}
+
+function resetPackageForm() {
+  ['pkg-name','pkg-dest','pkg-days','pkg-nights','pkg-badge','pkg-orig-price','pkg-sell-price',
+   'pkg-hero-img','pkg-card-img','pkg-tagline','pkg-about','pkg-terms'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('pkg-hot').checked = false;
+  document.getElementById('pkg-active').checked = true;
+  document.getElementById('pkg-price-type').value = 'person';
+  updatePricePreview();
+  updateImgPreview('', 'hero-preview', 'hero-ph');
+  updateImgPreview('', 'card-preview', 'card-ph');
+  document.getElementById('highlights-list').innerHTML = '';
+  document.getElementById('inclusions-list').innerHTML = '';
+  document.getElementById('exclusions-list').innerHTML = '';
+  document.getElementById('itinerary-builder').innerHTML = '';
+  // Default inclusions
+  ['✅ Return airfare (Economy class)', '✅ Hotel accommodation as per itinerary',
+   '✅ Daily breakfast', '✅ Airport transfers', '✅ Sightseeing as per itinerary'].forEach(t => addBullet('inclusions-list', '', t));
+  ['❌ Visa fees', '❌ Travel insurance', '❌ Personal expenses & tips',
+   '❌ Any meals not mentioned'].forEach(t => addBullet('exclusions-list', '', t));
+  resetGallery();
+  updateBadges();
+}
+
+function populatePackageForm(pkg) {
+  document.getElementById('pkg-name').value = pkg.name || '';
+  document.getElementById('pkg-dest').value = pkg.destination || '';
+  document.getElementById('pkg-days').value = pkg.days || '';
+  document.getElementById('pkg-nights').value = pkg.nights || '';
+  document.getElementById('pkg-badge').value = pkg.badge || '';
+  document.getElementById('pkg-orig-price').value = pkg.origPrice || '';
+  document.getElementById('pkg-sell-price').value = pkg.sellPrice || '';
+  document.getElementById('pkg-price-type').value = pkg.priceType || 'person';
+  document.getElementById('pkg-hot').checked = pkg.hot || false;
+  document.getElementById('pkg-active').checked = pkg.status === 'active';
+  document.getElementById('pkg-hero-img').value = pkg.heroImg || '';
+  document.getElementById('pkg-card-img').value = pkg.cardImg || '';
+  document.getElementById('pkg-tagline').value = pkg.tagline || '';
+  document.getElementById('pkg-about').value = pkg.about || '';
+  document.getElementById('pkg-terms').value = pkg.terms || '';
+  updatePricePreview();
+  updateImgPreview(pkg.heroImg||'', 'hero-preview', 'hero-ph');
+  updateImgPreview(pkg.cardImg||'', 'card-preview', 'card-ph');
+  // Highlights
+  document.getElementById('highlights-list').innerHTML = '';
+  (pkg.highlights||[]).forEach(h => addBullet('highlights-list', '', h));
+  // Inclusions / Exclusions
+  document.getElementById('inclusions-list').innerHTML = '';
+  (pkg.inclusions||[]).forEach(h => addBullet('inclusions-list', '', h));
+  document.getElementById('exclusions-list').innerHTML = '';
+  (pkg.exclusions||[]).forEach(h => addBullet('exclusions-list', '', h));
+  // Itinerary
+  document.getElementById('itinerary-builder').innerHTML = '';
+  (pkg.itinerary||[]).forEach(day => addItineraryDayWithData(day));
+  // Gallery
+  resetGallery(pkg.gallery||[]);
+}
+
+function savePackage() {
+  const name = document.getElementById('pkg-name').value.trim();
+  const dest = document.getElementById('pkg-dest').value;
+  const sellPrice = parseInt(document.getElementById('pkg-sell-price').value) || 0;
+  if (!name) { toast('Package name is required.', 'error'); switchToTab('basic'); return; }
+  if (!dest) { toast('Please select a destination.', 'error'); switchToTab('basic'); return; }
+  if (!sellPrice) { toast('Selling price is required.', 'error'); switchToTab('pricing'); return; }
+
+  const pkg = {
+    id: state.editingPkg || uid(),
+    name,
+    destination: dest,
+    days: parseInt(document.getElementById('pkg-days').value)||0,
+    nights: parseInt(document.getElementById('pkg-nights').value)||0,
+    badge: document.getElementById('pkg-badge').value.trim(),
+    hot: document.getElementById('pkg-hot').checked,
+    status: document.getElementById('pkg-active').checked ? 'active' : 'draft',
+    origPrice: parseInt(document.getElementById('pkg-orig-price').value)||0,
+    sellPrice,
+    priceType: document.getElementById('pkg-price-type').value,
+    heroImg: document.getElementById('pkg-hero-img').value.trim(),
+    cardImg: document.getElementById('pkg-card-img').value.trim(),
+    gallery: getGalleryUrls(),
+    tagline: document.getElementById('pkg-tagline').value.trim(),
+    about: document.getElementById('pkg-about').value.trim(),
+    highlights: getBulletValues('highlights-list'),
+    inclusions: getBulletValues('inclusions-list'),
+    exclusions: getBulletValues('exclusions-list'),
+    itinerary: getItineraryData(),
+    terms: document.getElementById('pkg-terms').value.trim(),
+    updatedAt: new Date().toISOString(),
+    createdAt: state.editingPkg
+      ? (state.packages.find(p=>p.id===state.editingPkg)?.createdAt||new Date().toISOString())
+      : new Date().toISOString(),
+  };
+
+  if (state.editingPkg) {
+    const idx = state.packages.findIndex(p => p.id === state.editingPkg);
+    if (idx >= 0) state.packages[idx] = pkg;
+  } else {
+    state.packages.unshift(pkg);
+  }
+
+  saveData();
+  closePackageModal();
+  toast(state.editingPkg ? 'Package updated!' : 'Package added!', 'success');
+  renderPackagesTable(document.getElementById('pkg-search')?.value||'');
+  if (state.currentSection === 'dashboard') renderDashboard();
+}
+
+function switchToTab(tabId) {
+  document.querySelectorAll('#pkg-tabs .mt-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tabId));
+  document.querySelectorAll('.mt-panel').forEach(p => p.classList.toggle('active', p.id==='tab-'+tabId));
+}
+
+// ===== FORM HELPERS =====
+function updatePricePreview() {
+  const orig = parseInt(document.getElementById('pkg-orig-price').value)||0;
+  const sell = parseInt(document.getElementById('pkg-sell-price').value)||0;
+  document.getElementById('pp-orig').textContent = orig ? '₹'+fmt(orig) : '₹—';
+  document.getElementById('pp-sell').textContent = sell ? '₹'+fmt(sell) : '₹—';
+  if (orig && sell && orig > sell) {
+    const save = orig - sell;
+    const pct = Math.round((save/orig)*100);
+    document.getElementById('pp-save').textContent = '₹'+fmt(save);
+    document.getElementById('pp-pct').textContent = pct+'% off';
+  } else {
+    document.getElementById('pp-save').textContent = '—';
+    document.getElementById('pp-pct').textContent = 'Set both prices';
+  }
+}
+
+function updateImgPreview(url, previewId, phId) {
+  const img = document.getElementById(previewId);
+  const ph = document.getElementById(phId);
+  if (url) {
+    img.src = url;
+    img.className = 'img-preview show';
+    ph.style.display = 'none';
+  } else {
+    img.className = 'img-preview';
+    ph.style.display = 'flex';
+  }
+}
+
+function addBullet(containerId, prefix='', value='') {
+  const container = document.getElementById(containerId);
+  const item = document.createElement('div');
+  item.className = 'bi';
+  item.innerHTML = `<input type="text" placeholder="Enter item..." value="${esc(prefix+value)}">
+    <button class="bi-rm" type="button">✕</button>`;
+  item.querySelector('.bi-rm').addEventListener('click', () => item.remove());
+  container.appendChild(item);
+}
+
+function getBulletValues(containerId) {
+  return [...document.getElementById(containerId).querySelectorAll('input')]
+    .map(i => i.value.trim()).filter(v => v);
+}
+
+function syncItinerary() {
+  const days = parseInt(document.getElementById('pkg-days').value)||0;
+  const builder = document.getElementById('itinerary-builder');
+  const current = builder.querySelectorAll('.iti-day').length;
+  if (days > current) {
+    for (let d = current+1; d <= days; d++) addItineraryDayWithData({day:d,title:'',desc:''});
+  }
+}
+
+function addItineraryDay() {
+  const current = document.getElementById('itinerary-builder').querySelectorAll('.iti-day').length;
+  addItineraryDayWithData({day:current+1,title:'',desc:''});
+}
+
+function addItineraryDayWithData({day,title,desc}) {
+  const builder = document.getElementById('itinerary-builder');
+  const item = document.createElement('div');
+  item.className = 'iti-day';
+  item.innerHTML = `
+    <div class="iti-hd">
+      <span class="day-badge">Day ${day}</span>
+      <input type="text" placeholder="Day title (e.g. Arrival & City Tour)" value="${esc(title||'')}">
+      <button type="button" style="background:none;border:none;cursor:pointer;color:var(--g400);font-size:16px;padding:4px">✕</button>
+    </div>
+    <div class="iti-body">
+      <textarea placeholder="Describe the day's activities, meals, experiences...">${esc(desc||'')}</textarea>
+    </div>`;
+  item.querySelector('button').addEventListener('click', () => { item.remove(); renumberIti(); });
+  builder.appendChild(item);
+}
+
+function renumberIti() {
+  document.querySelectorAll('.iti-day').forEach((d,i) => {
+    d.querySelector('.day-badge').textContent = 'Day '+(i+1);
+  });
+}
+
+function getItineraryData() {
+  return [...document.querySelectorAll('.iti-day')].map((d,i) => ({
+    day: i+1,
+    title: d.querySelector('.iti-hd input').value.trim(),
+    desc: d.querySelector('.iti-body textarea').value.trim(),
+  }));
+}
+
+function buildGalleryGrid() {
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.innerHTML = `
+      <img class="gallery-img-${i}" alt="Gallery ${i+1}">
+      <div class="gi-ph">🖼️</div>
+      <input type="text" placeholder="Image URL ${i+1}" data-gallery-idx="${i}">`;
+    item.querySelector('input').addEventListener('input', e => {
+      const url = e.target.value.trim();
+      const img = item.querySelector('img');
+      const ph = item.querySelector('.gi-ph');
+      if (url) { img.src = url; img.classList.add('show'); ph.style.display='none'; }
+      else { img.classList.remove('show'); ph.style.display='flex'; }
+    });
+    grid.appendChild(item);
+  }
+}
+
+function resetGallery(urls=[]) {
+  buildGalleryGrid();
+  urls.slice(0,6).forEach((url,i) => {
+    const inputs = document.querySelectorAll('[data-gallery-idx]');
+    if (inputs[i]) {
+      inputs[i].value = url;
+      inputs[i].dispatchEvent(new Event('input'));
+    }
+  });
+}
+
+function getGalleryUrls() {
+  return [...document.querySelectorAll('[data-gallery-idx]')]
+    .map(i => i.value.trim()).filter(v => v);
+}
+
+// ===== SETTINGS =====
+function wireSettings() {
+  document.getElementById('save-sb-btn').addEventListener('click', () => {
+    const url = document.getElementById('sb-url').value.trim();
+    const key = document.getElementById('sb-key').value.trim();
+    if (!key) { toast('Please enter the Supabase Anon Key.','error'); return; }
+    SUPABASE_URL = url;
+    SUPABASE_KEY = key;
+    localStorage.setItem('hbv_sb_url', url);
+    localStorage.setItem('hbv_sb_key', key);
+    document.getElementById('sb-status').innerHTML = `<span style="color:var(--success)">✅ Settings saved. Add the schema and test your connection.</span>`;
+    document.getElementById('supabase-banner').style.display = 'none';
+    toast('Supabase settings saved!', 'success');
+  });
+
+  document.getElementById('sb-url').value = SUPABASE_URL;
+  document.getElementById('sb-key').value = SUPABASE_KEY;
+
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const data = { packages: state.packages, enquiries: state.enquiries, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'hbv-packages-'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();
+    toast('Data exported!', 'success');
+  });
+
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    if (!confirm('This will permanently delete ALL local packages and enquiries. Are you sure?')) return;
+    localStorage.removeItem('hbv_packages');
+    localStorage.removeItem('hbv_enquiries');
+    state.packages = []; state.enquiries = [];
+    seedDemoEnquiries();
+    renderDashboard();
+    toast('Data cleared.', 'success');
+  });
+}
+
+// ===== SEARCH WIRING =====
+document.getElementById('pkg-search').addEventListener('input', e => renderPackagesTable(e.target.value.toLowerCase()));
+document.getElementById('enq-search').addEventListener('input', e => renderEnquiriesTable(e.target.value.toLowerCase()));
+
+// ===== UTILS =====
+function fmt(n) { return n ? Number(n).toLocaleString('en-IN') : '0'; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d) {
+  try { return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'}); }
+  catch { return d||''; }
+}
+
+function toast(msg, type='success') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ===== BOOT =====
+init();
+</script>
+</body>
+</html>

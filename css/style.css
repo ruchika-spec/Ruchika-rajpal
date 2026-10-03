@@ -563,6 +563,21 @@ ul { list-style: none; }
   inset: 0;
 }
 
+/* Image-based dest cards */
+.dest-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s ease;
+}
+
+.dest-card:hover .dest-card-img {
+  transform: scale(1.08);
+}
+
 .dest-card-overlay {
   position: absolute;
   inset: 0;
@@ -574,6 +589,7 @@ ul { list-style: none; }
   bottom: 20px;
   left: 20px;
   color: var(--white);
+  text-shadow: 0 2px 8px rgba(0,0,0,.5);
 }
 
 .dest-card-label .dest-name {
@@ -585,7 +601,54 @@ ul { list-style: none; }
 
 .dest-card-label .dest-tag {
   font-size: 12px;
-  color: rgba(255,255,255,0.75);
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+/* ===== PACKAGE CARD — Discount badge ===== */
+.pkg-discount-badge {
+  background: #D1FAE5;
+  color: #065F46;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 100px;
+  display: inline-block;
+  margin-left: 6px;
+}
+.pkg-price-original {
+  font-size: 12px;
+  color: var(--text-mid);
+  text-decoration: line-through;
+  margin-bottom: 2px;
+}
+.pkg-price-savings {
+  font-size: 12px;
+  color: #059669;
+  font-weight: 600;
+}
+
+/* ===== PACKAGE DETAIL LINK (click card → detail) ===== */
+.pkg-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.pkg-view-detail {
+  background: var(--brand-pale);
+  color: var(--brand-mid);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Inter, sans-serif;
+  cursor: pointer;
+  transition: all .15s;
+}
+.pkg-view-detail:hover {
+  background: var(--brand-mid);
+  color: white;
 }
 
 /* ===== DESTINATIONS / PACKAGE CARDS ===== */
