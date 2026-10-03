@@ -403,21 +403,52 @@ function handleEnquirySubmit(e) {
     return;
   }
 
-  // Save lead to localStorage → auto-appears in admin dashboard
+  // Save lead to localStorage + push directly to Supabase
+  const enqId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const enqRecord = {
+    id: enqId, name, phone, email,
+    destination: dest,
+    travelDate, travellers, budget, message,
+    status: 'new', notes: '', source: 'website',
+    createdAt: new Date().toISOString(),
+  };
   try {
     const enquiries = JSON.parse(localStorage.getItem('hbv_enquiries') || '[]');
-    enquiries.unshift({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-      name, phone, email,
-      destination: dest,
-      travelDate, travellers, budget, message,
-      status: 'new',
-      notes: '',
-      source: 'website',
-      createdAt: new Date().toISOString(),
-    });
+    enquiries.unshift(enqRecord);
     localStorage.setItem('hbv_enquiries', JSON.stringify(enquiries));
-  } catch(err) { /* localStorage unavailable — continue without saving */ }
+  } catch(err) {}
+
+  // Push enquiry to Supabase so admin team sees it on any device
+  (async () => {
+    try {
+      const SB_URL = 'https://iqpilmnrdclgdosrhwso.supabase.co';
+      const SB_KEY = 'sb_publishable_C828WqfS3rzikcRyu68ybg_SazRcXLA';
+      await fetch(`${SB_URL}/rest/v1/enquiries`, {
+        method: 'POST',
+        headers: {
+          'apikey': SB_KEY,
+          'Authorization': `Bearer ${SB_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          id: enqRecord.id,
+          name: enqRecord.name,
+          phone: enqRecord.phone,
+          email: enqRecord.email || '',
+          destination: enqRecord.destination || '',
+          travel_date: enqRecord.travelDate || '',
+          travellers: String(enqRecord.travellers || ''),
+          budget: enqRecord.budget || '',
+          message: enqRecord.message || '',
+          status: 'new',
+          notes: '',
+          source: 'website',
+          created_at: enqRecord.createdAt,
+        }),
+      });
+    } catch(err) { /* silent — WhatsApp redirect still happens */ }
+  })();
 
   const msg = encodeURIComponent(
     `Hi Holidays by Vismora! 🌍\n\nI'd like to enquire about a holiday package.\n\nName: ${name}\nPhone: ${phone}${dest !== 'General' ? '\nDestination: '+dest : ''}${travelDate ? '\nTravel Date: '+travelDate : ''}${travellers ? '\nTravellers: '+travellers : ''}${budget ? '\nBudget: '+budget : ''}${message ? '\n\nMessage: '+message : ''}\n\nPlease share more details!`
